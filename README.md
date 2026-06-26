@@ -2,7 +2,8 @@
 
 A Python computer vision project for real-time hand gesture recognition and air writing using OpenCV, MediaPipe, TensorFlow Lite, and PyQt5.
 
-![Uploading Screenshot 2026-06-06 151511.png…]()
+<img width="1082" height="1015" alt="Screenshot 2026-06-06 151511" src="https://github.com/user-attachments/assets/d4ff0743-8e29-4b62-bbf7-481086a46a6d" />
+
 
 
 
