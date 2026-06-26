@@ -119,6 +119,4 @@ output/
 *.bak_*
 ```
 
-## License
 
-Add your license here if you want to make the project open source.
