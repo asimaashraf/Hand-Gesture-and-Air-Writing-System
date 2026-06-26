@@ -1,6 +1,8 @@
-# Hand Gesture and Air Writing System
+<img width="1082" height="1015" alt="Screenshot 2026-06-06 151511" src="https://github.com/user-attachments/assets/34b11ed7-9c85-4828-8a6a-fab6f47a2b07" /># Hand Gesture and Air Writing System
 
 A Python computer vision project for real-time hand gesture recognition and air writing using OpenCV, MediaPipe, TensorFlow Lite, and PyQt5.
+![Uploading Screenshot 2026-06-06 151511.png…]()
+
 
 ## Features
 
