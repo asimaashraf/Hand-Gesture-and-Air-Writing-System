@@ -1,0 +1,26 @@
+# Virtual environments
+.venv/
+myenv/
+venv/
+env/
+
+# IDE/editor files
+.idea/
+.vscode/
+
+# Python cache/build files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Generated app output
+output/
+
+# Local backup model artifacts
+*.bak_*
+
+# OS files
+.DS_Store
+Thumbs.db

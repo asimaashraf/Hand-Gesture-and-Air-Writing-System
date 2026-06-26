@@ -1,0 +1,5044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hand Gesture & Air Writing System</title>
+  <style>
+    :root {
+      --bg: #090d14;
+      --panel: #101722;
+      --panel-2: #151d29;
+      --panel-3: #1b2533;
+      --stroke: rgba(255, 255, 255, 0.09);
+      --text: #f6f8fb;
+      --muted: #aab4c3;
+      --soft: #748093;
+      --blue: #4f8cff;
+      --violet: #7d4cff;
+      --cyan: #28d8ff;
+      --green: #48f06a;
+      --orange: #ff9a3d;
+      --danger: #ff5e7a;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(79, 140, 255, 0.18), transparent 28rem),
+        radial-gradient(circle at bottom right, rgba(72, 240, 106, 0.08), transparent 26rem),
+        #05070b;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    body.light-mode {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --panel-3: #edf2f7;
+      --stroke: rgba(15, 23, 42, 0.12);
+      --text: #101827;
+      --muted: #556274;
+      --soft: #6b7280;
+      background:
+        radial-gradient(circle at top left, rgba(79, 140, 255, 0.16), transparent 28rem),
+        radial-gradient(circle at bottom right, rgba(72, 240, 106, 0.10), transparent 26rem),
+        #eef3f8;
+    }
+
+    body.light-mode .app {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(242, 246, 251, 0.98));
+      border-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
+    }
+
+    body.light-mode .sidebar {
+      background: rgba(247, 250, 253, 0.94);
+    }
+
+    body.light-mode .camera-card,
+    body.light-mode .metrics,
+    body.light-mode .canvas,
+    body.light-mode .panel,
+    body.light-mode .view-panel,
+    body.light-mode .setting-card,
+    body.light-mode .system-card,
+    body.light-mode .history-detail,
+    body.light-mode .history-record,
+    body.light-mode .stat-box {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    body.light-mode .mode-switch,
+    body.light-mode .pill,
+    body.light-mode .icon-button,
+    body.light-mode .control-select,
+    body.light-mode .history-search,
+    body.light-mode .filter-button,
+    body.light-mode .back-button {
+      background: rgba(255, 255, 255, 0.86);
+      border-color: rgba(15, 23, 42, 0.14);
+      color: var(--text);
+    }
+
+    body.light-mode .camera-feed,
+    body.light-mode .detail-preview,
+    body.light-mode .canvas-board {
+      background: #f8fafc;
+    }
+
+    body.light-mode .feed-badge {
+      background: rgba(255, 255, 255, 0.78);
+      color: #0b9f3d;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      min-height: 720px;
+      background: linear-gradient(145deg, rgba(13, 19, 29, 0.98), rgba(7, 11, 18, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 190px 1fr 270px;
+      overflow: hidden;
+    }
+
+    .app.gesture-active .canvas {
+      display: none;
+    }
+
+    .dashboard-panel {
+      display: none;
+    }
+
+    .app.dashboard-active .dashboard-panel {
+      display: grid;
+    }
+
+    .app.dashboard-active .main {
+      grid-column: 2 / 4;
+    }
+
+    .app.dashboard-active .rightbar,
+    .app.dashboard-active .mode-switch,
+    .app.dashboard-active .writing-toolbar,
+    .app.dashboard-active .camera-card,
+    .app.dashboard-active .metrics,
+    .app.dashboard-active .canvas {
+      display: none;
+    }
+
+    .app.dashboard-active .top-status {
+      display: none;
+    }
+
+    .writing-toolbar {
+      display: none;
+    }
+
+    .app.writing-active .mode-switch {
+      display: grid;
+    }
+
+    .app.writing-active .writing-toolbar {
+      display: none;
+    }
+
+    .app.writing-active {
+      grid-template-columns: 220px minmax(940px, 1fr) 280px;
+    }
+
+    .app.writing-active .main {
+      grid-template-rows: auto auto auto auto;
+    }
+
+    .app.writing-active .camera-card {
+      min-height: 0;
+    }
+
+    .app.writing-active .camera-feed {
+      aspect-ratio: 16 / 9;
+      min-height: 0;
+      height: auto;
+    }
+
+    .app.writing-active .metrics {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .app.writing-active .rightbar {
+      padding-top: 70px;
+    }
+
+    .app.writing-active .feed-badge {
+      top: 12px;
+    }
+
+    .app.writing-active .logging-badge {
+      top: 12px;
+    }
+
+    .app.history-active .mode-switch,
+    .app.history-active .camera-card,
+    .app.history-active .metrics,
+    .app.history-active .canvas,
+    .app.history-active .rightbar,
+    .app.settings-active .mode-switch,
+    .app.settings-active .camera-card,
+    .app.settings-active .metrics,
+    .app.settings-active .canvas,
+    .app.settings-active .rightbar {
+      display: none;
+    }
+
+    .app.history-active .main,
+    .app.settings-active .main {
+      grid-column: 2 / 4;
+    }
+
+    .view-panel {
+      display: none;
+      border: 1px solid var(--stroke);
+      background: rgba(16, 23, 34, 0.82);
+      padding: 20px;
+      min-height: 520px;
+    }
+
+    .app.history-active .history-view,
+    .app.settings-active .settings-view {
+      display: block;
+    }
+
+    .view-panel h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .view-panel p {
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    .view-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .history-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 14px;
+      align-items: start;
+      min-height: calc(100vh - 330px);
+    }
+
+    .history-side {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .history-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .history-search {
+      flex: 1 1 220px;
+      min-height: 38px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      padding: 0 12px;
+      font: inherit;
+    }
+
+    .filter-button,
+    .danger-button,
+    .back-button {
+      min-height: 38px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 0 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .filter-button.active {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      color: white;
+    }
+
+    .danger-button {
+      color: #ff9caf;
+      border-color: rgba(255, 94, 122, 0.35);
+    }
+
+    .history-records {
+      display: grid;
+      gap: 10px;
+      max-height: none;
+      height: calc(100vh - 350px);
+      min-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+      align-content: start;
+    }
+
+    .history-record {
+      display: grid;
+      grid-template-columns: 54px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 10px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .history-record:hover {
+      border-color: rgba(79, 140, 255, 0.5);
+    }
+
+    .record-preview {
+      width: 52px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      background: rgba(79, 140, 255, 0.13);
+      color: var(--green);
+      font-size: 22px;
+      overflow: hidden;
+    }
+
+    .record-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .record-title {
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .record-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .record-delete {
+      border: 0;
+      background: transparent;
+      color: #ff9caf;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .history-detail {
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.035);
+      padding: 14px;
+      min-height: 320px;
+      border-radius: 5px;
+    }
+
+    .history-summary-card {
+      border: 1px solid var(--stroke);
+      background:
+        linear-gradient(145deg, rgba(10, 20, 34, 0.82), rgba(4, 10, 18, 0.78));
+      padding: 14px;
+      border-radius: 5px;
+    }
+
+    .history-summary-card h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+
+    .history-summary-card strong {
+      color: var(--green);
+    }
+
+    .history-summary-card p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-summary-card .filter-button {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .detail-preview {
+      min-height: 160px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--green);
+      font-size: 46px;
+      overflow: hidden;
+    }
+
+    .detail-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid var(--stroke);
+      padding: 10px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .detail-row strong {
+      color: var(--text);
+      text-align: right;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.035);
+      padding: 12px;
+      border-radius: 5px;
+    }
+
+    .stat-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat-box strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+    }
+
+    .setting-card {
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.035);
+      padding: 16px;
+      border-radius: 5px;
+    }
+
+    .setting-card h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+
+    .settings-layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .settings-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 0;
+      border-top: 1px solid var(--stroke);
+    }
+
+    .control-row:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .control-copy span {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .control-copy small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .control-select,
+    .control-range {
+      min-width: 150px;
+    }
+
+    .control-select {
+      min-height: 34px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 0 10px;
+      font: inherit;
+    }
+
+    .control-range {
+      accent-color: var(--blue);
+    }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      flex: 0 0 auto;
+    }
+
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+    }
+
+    .toggle span {
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.09);
+      cursor: pointer;
+      transition: background 160ms ease;
+    }
+
+    .toggle span::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 2px;
+      top: 2px;
+      background: var(--muted);
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .toggle input:checked + span {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+    }
+
+    .toggle input:checked + span::after {
+      transform: translateX(22px);
+      background: white;
+    }
+
+    .about-list {
+      display: grid;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .about-list strong {
+      color: var(--text);
+    }
+
+    .sidebar {
+      padding: 22px 12px;
+      border-right: 1px solid var(--stroke);
+      background: rgba(6, 11, 19, 0.78);
+    }
+
+    .brand {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 22px;
+      padding: 0 8px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(79, 140, 255, 0.45);
+      background: linear-gradient(135deg, rgba(79, 140, 255, 0.18), rgba(125, 76, 255, 0.12));
+    }
+
+    .brand h1 {
+      font-size: 16px;
+      line-height: 1.15;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      color: var(--blue);
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button,
+    .tool button,
+    .canvas-actions button,
+    .clear-button {
+      border: 0;
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .nav button {
+      width: 100%;
+      min-height: 42px;
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      background: transparent;
+      color: #c8d1de;
+      text-align: left;
+    }
+
+    .nav button.active {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      color: white;
+      box-shadow: 0 12px 30px rgba(79, 140, 255, 0.22);
+    }
+
+    .nav svg,
+    .brand svg,
+    .metric svg,
+    .activity svg,
+    .mode svg,
+    .tool svg,
+    .canvas-actions svg,
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .system-card {
+      margin-top: 84px;
+      padding: 14px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .system-card h2,
+    .panel h2,
+    .camera-card h2 {
+      margin: 0;
+      font-size: 13px;
+      letter-spacing: 0;
+    }
+
+    .system-card h2 {
+      color: #b79cff;
+      margin-bottom: 14px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .camera-toggle-row {
+      cursor: pointer;
+      padding: 8px 10px;
+      margin-inline: -10px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+    }
+
+    .camera-toggle-row:hover,
+    .camera-toggle-row:focus-visible {
+      border-color: rgba(79, 140, 255, 0.45);
+      background: rgba(79, 140, 255, 0.08);
+      outline: none;
+    }
+
+    .camera-toggle-row.camera-off .dot {
+      background: var(--danger);
+      box-shadow: 0 0 14px rgba(255, 94, 122, 0.8);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      box-shadow: 0 0 14px rgba(72, 240, 106, 0.8);
+    }
+
+    .main {
+      padding: 18px 14px 14px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .topbar {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .title h2 {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.1;
+    }
+
+    .title span {
+      color: #8e6cff;
+    }
+
+    .title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-status {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      color: #dbe4ef;
+      white-space: nowrap;
+      font: inherit;
+      cursor: default;
+    }
+
+    button.pill {
+      cursor: pointer;
+    }
+
+    button.pill.camera-off {
+      border-color: rgba(255, 94, 122, 0.45);
+    }
+
+    button.pill.camera-off .dot {
+      background: var(--danger);
+      box-shadow: 0 0 14px rgba(255, 94, 122, 0.8);
+    }
+
+    .pill strong {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+    }
+
+    .mode-switch {
+      width: min(520px, 100%);
+      justify-self: center;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid rgba(79, 140, 255, 0.58);
+      background: rgba(7, 12, 22, 0.88);
+      box-shadow: 0 0 32px rgba(125, 76, 255, 0.22);
+    }
+
+    .mode {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .mode.active {
+      background: linear-gradient(135deg, #5e95ff, #7d4cff);
+      color: white;
+      box-shadow: 0 10px 28px rgba(79, 140, 255, 0.3);
+    }
+
+    .mode strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .mode span {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      color: currentColor;
+      opacity: 0.82;
+    }
+
+    .writing-toolbar {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
+      padding: 22px 30px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      background: rgba(10, 16, 25, 0.82);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 42px rgba(0, 0, 0, 0.22);
+    }
+
+    .ink-button {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      background: rgba(5, 10, 18, 0.68);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.02);
+    }
+
+    .ink-button svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ink-button.blue {
+      color: #3268ff;
+      border-color: rgba(50, 104, 255, 0.86);
+      box-shadow: 0 0 28px rgba(50, 104, 255, 0.16);
+    }
+
+    .ink-button.green {
+      color: var(--green);
+      border-color: rgba(72, 240, 106, 0.92);
+      box-shadow: 0 0 30px rgba(72, 240, 106, 0.24);
+    }
+
+    .ink-button.red {
+      color: #ff2d55;
+      border-color: rgba(255, 45, 85, 0.9);
+      box-shadow: 0 0 28px rgba(255, 45, 85, 0.16);
+    }
+
+    .ink-button.eraser {
+      color: #f3f5fb;
+    }
+
+    .ink-button.clear {
+      color: #a345ff;
+      border-color: rgba(163, 69, 255, 0.78);
+      box-shadow: 0 0 28px rgba(163, 69, 255, 0.18);
+    }
+
+    .ink-button.active {
+      background: rgba(10, 20, 16, 0.84);
+      transform: translateY(-1px);
+    }
+
+    .camera-card,
+    .metrics,
+    .canvas,
+    .panel {
+      border: 1px solid var(--stroke);
+      background: rgba(16, 23, 34, 0.82);
+    }
+
+    .camera-card {
+      min-height: 0;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--text);
+    }
+
+    .card-title h2 {
+      flex: 1;
+    }
+
+    .camera-feed {
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+      aspect-ratio: 16 / 9;
+      height: auto;
+      background: #05070b;
+    }
+
+    .camera-feed::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(5, 8, 13, 0.06), rgba(5, 8, 13, 0.26));
+    }
+
+    .camera-feed::after {
+      content: "";
+      position: absolute;
+      left: 11%;
+      bottom: 8%;
+      width: 72px;
+      height: 132px;
+      background:
+        linear-gradient(#916b3d, #916b3d) 50% 0 / 8px 100% no-repeat,
+        linear-gradient(35deg, transparent 45%, #916b3d 46% 52%, transparent 53%) 0 44px / 100% 70px no-repeat;
+      opacity: 0.45;
+      filter: blur(1px);
+      display: none;
+    }
+
+    .camera-feed video,
+    .camera-feed img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      transform: none;
+      background: #05070b;
+    }
+
+    .camera-tool-overlay {
+      position: absolute;
+      top: 11.5%;
+      left: 2.5%;
+      right: 2.5%;
+      z-index: 6;
+      display: none;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(6px, 1vw, 12px);
+      pointer-events: auto;
+    }
+
+    .app.writing-active .camera-tool-overlay {
+      display: grid;
+    }
+
+    .camera-tool-overlay span {
+      min-height: clamp(34px, 5vw, 58px);
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      border-radius: 6px;
+      background: rgba(5, 9, 15, 0.86);
+      color: #ffffff;
+      font-size: clamp(10px, 1.3vw, 17px);
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      user-select: none;
+    }
+
+    .camera-tool-overlay span.active {
+      transform: translateY(-2px);
+      border-width: 3px;
+      box-shadow: 0 0 24px rgba(72, 240, 106, 0.32), 0 16px 34px rgba(0, 0, 0, 0.4);
+    }
+
+    .camera-tool-overlay [data-camera-tool="blue"].active {
+      background: rgba(50, 104, 255, 0.92);
+      border-color: #9fb8ff;
+    }
+
+    .camera-tool-overlay [data-camera-tool="green"].active {
+      background: rgba(72, 240, 106, 0.88);
+      border-color: #d5ffdf;
+      color: #031009;
+      text-shadow: none;
+    }
+
+    .camera-tool-overlay [data-camera-tool="red"].active {
+      background: rgba(255, 45, 85, 0.9);
+      border-color: #ffd1da;
+    }
+
+    .camera-tool-overlay [data-camera-tool="eraser"].active {
+      background: rgba(236, 242, 255, 0.92);
+      border-color: #ffffff;
+      color: #101827;
+      text-shadow: none;
+    }
+
+    .camera-tool-overlay [data-camera-tool="clear"].active {
+      background: rgba(255, 94, 55, 0.92);
+      border-color: #ffd7cb;
+    }
+
+    .camera-feed.camera-live .hand-stage {
+      display: none;
+    }
+
+    .camera-feed:not(.camera-live) .hand-stage {
+      display: none;
+    }
+
+    .camera-message {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      background:
+        radial-gradient(circle at center, rgba(79, 140, 255, 0.12), transparent 16rem),
+        rgba(5, 8, 13, 0.72);
+      font-size: 14px;
+    }
+
+    .camera-feed.camera-live .camera-message {
+      display: none;
+    }
+
+    .feed-badge {
+      position: absolute;
+      z-index: 3;
+      top: 14px;
+      min-height: 28px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--green);
+      background: rgba(10, 14, 19, 0.58);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .feed-badge.left {
+      left: 14px;
+    }
+
+    .feed-badge.right {
+      right: 14px;
+    }
+
+    .logging-badge {
+      position: absolute;
+      left: 50%;
+      top: 14px;
+      z-index: 4;
+      min-height: 34px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      background: rgba(8, 12, 18, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .logging-badge strong {
+      color: var(--green);
+    }
+
+    .logging-badge span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .logging-badge.active {
+      border-color: rgba(72, 240, 106, 0.7);
+      box-shadow: 0 0 0 1px rgba(72, 240, 106, 0.18), 0 16px 36px rgba(0, 0, 0, 0.34);
+    }
+
+    .fullscreen-button {
+      min-height: 38px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text);
+      background: rgba(8, 12, 18, 0.76);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .camera-feed .fullscreen-button {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      z-index: 4;
+    }
+
+    .fullscreen-button svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .fullscreen-button:hover {
+      border-color: rgba(72, 240, 106, 0.6);
+      color: var(--green);
+    }
+
+    .camera-feed:fullscreen,
+    .camera-feed.fullscreen-fallback {
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      background: #05070b;
+    }
+
+    .camera-feed:fullscreen img,
+    .camera-feed.fullscreen-fallback img {
+      object-fit: cover;
+    }
+
+    .camera-feed:fullscreen .fullscreen-button,
+    .camera-feed.fullscreen-fallback .fullscreen-button {
+      right: 24px;
+      bottom: 24px;
+    }
+
+    .camera-feed:fullscreen .logging-badge,
+    .camera-feed.fullscreen-fallback .logging-badge {
+      top: 24px;
+      min-height: 48px;
+      padding: 0 22px;
+      font-size: 18px;
+    }
+
+    .camera-feed.fullscreen-fallback {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+    }
+
+    .hand-stage {
+      position: absolute;
+      inset: 16px 12%;
+      display: none;
+      place-items: center;
+      z-index: 2;
+    }
+
+    .tracking-box {
+      position: absolute;
+      width: 270px;
+      height: 230px;
+      border: 2px solid rgba(72, 240, 106, 0.85);
+      box-shadow: 0 0 24px rgba(72, 240, 106, 0.2);
+    }
+
+    .hand-svg {
+      position: relative;
+      z-index: 3;
+      width: 300px;
+      height: 255px;
+      filter: drop-shadow(0 18px 22px rgba(45, 24, 8, 0.28));
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .gesture-insights {
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr 1.35fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .app.writing-active .gesture-insights,
+    .app.dashboard-active .gesture-insights,
+    .app.history-active .gesture-insights,
+    .app.settings-active .gesture-insights {
+      display: none;
+    }
+
+    .insight-card {
+      min-height: 228px;
+      padding: 16px;
+      border: 1px solid rgba(116, 128, 147, 0.18);
+      background: rgba(6, 13, 23, 0.76);
+      border-radius: 5px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .insight-card h3 {
+      margin: 0 0 16px;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .guide-row {
+      display: grid;
+      gap: 3px;
+      padding: 8px 0 8px 42px;
+      position: relative;
+    }
+
+    .guide-row::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 12px;
+      width: 20px;
+      height: 20px;
+      border: 2px solid currentColor;
+      border-radius: 6px;
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .guide-row span {
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .guide-row small {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .guide-row.green { color: var(--green); }
+    .guide-row.blue { color: var(--cyan); }
+    .guide-row.violet { color: var(--violet); }
+    .guide-row.yellow { color: var(--warning, #ffc121); }
+    .guide-row.red { color: var(--danger); }
+
+    .mini-hand {
+      height: 130px;
+      display: grid;
+      place-items: center;
+      color: var(--green);
+    }
+
+    .mini-hand svg {
+      width: 120px;
+      height: 150px;
+      stroke: rgba(246, 248, 251, 0.72);
+      fill: none;
+      stroke-width: 1.4;
+    }
+
+    .mini-hand circle {
+      fill: var(--green);
+      stroke: none;
+      filter: drop-shadow(0 0 6px rgba(72, 240, 106, 0.9));
+    }
+
+    .landmark-card > strong {
+      display: block;
+      padding: 12px;
+      color: var(--green);
+      border: 1px solid rgba(72, 240, 106, 0.42);
+      background: rgba(72, 240, 106, 0.08);
+      font-size: 18px;
+    }
+
+    .landmark-card > span {
+      display: block;
+      margin-top: -31px;
+      padding-left: 62px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .confidence-ring,
+    .quality-ring {
+      width: 132px;
+      height: 132px;
+      margin: 4px auto 14px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(5, 11, 20, 1) 0 50%, transparent 51%),
+        conic-gradient(var(--violet) 0 58%, rgba(255, 255, 255, 0.08) 58% 100%);
+      box-shadow: 0 0 26px rgba(125, 76, 255, 0.18);
+    }
+
+    .quality-ring {
+      background:
+        radial-gradient(circle at center, rgba(5, 11, 20, 1) 0 50%, transparent 51%),
+        conic-gradient(var(--green) 0 82%, rgba(255, 255, 255, 0.08) 82% 100%);
+    }
+
+    .confidence-ring strong,
+    .quality-ring strong {
+      display: block;
+      font-size: 26px;
+      color: var(--text);
+    }
+
+    .confidence-ring span,
+    .quality-ring span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .sparkline {
+      height: 52px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(160deg, transparent 0 22%, rgba(125, 76, 255, 0.5) 23% 26%, transparent 27% 45%, rgba(125, 76, 255, 0.5) 46% 49%, transparent 50% 100%),
+        linear-gradient(to top, rgba(125, 76, 255, 0.18), transparent);
+    }
+
+    .quality-card p,
+    .session-card p {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 10px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .quality-card strong,
+    .session-card strong {
+      color: var(--green);
+      text-align: right;
+    }
+
+    .metric {
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      background: rgba(79, 140, 255, 0.11);
+    }
+
+    .metric small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 17px;
+    }
+
+    .metric .green {
+      color: var(--green);
+    }
+
+    .progress {
+      margin-top: 8px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .progress span {
+      display: block;
+      width: 95%;
+      height: 100%;
+      background: var(--green);
+    }
+
+    .canvas {
+      min-height: 150px;
+      display: grid;
+      grid-template-columns: 1fr 112px;
+      overflow: hidden;
+    }
+
+    .canvas-board {
+      position: relative;
+      padding: 14px;
+      background:
+        radial-gradient(circle, rgba(255, 255, 255, 0.055) 1px, transparent 1px) 0 0 / 14px 14px,
+        rgba(6, 13, 22, 0.82);
+    }
+
+    .air-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: transparent;
+    }
+
+    .canvas-board h2 {
+      margin: 0;
+      color: #9d7dff;
+      font-size: 14px;
+    }
+
+    .writing {
+      position: absolute;
+      left: 142px;
+      top: 20px;
+      z-index: 2;
+      color: var(--green);
+      font-family: "Segoe Print", "Comic Sans MS", cursive;
+      font-size: clamp(56px, 8vw, 92px);
+      font-weight: 400;
+      line-height: 1;
+      text-shadow: 0 0 15px rgba(72, 240, 106, 0.45);
+      transform: rotate(-2deg);
+    }
+
+    .writing.empty {
+      color: var(--soft);
+      font-family: inherit;
+      font-size: 24px;
+      text-shadow: none;
+      transform: none;
+      top: 72px;
+      left: 142px;
+    }
+
+    .tool {
+      position: absolute;
+      top: 42px;
+      left: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .tool button {
+      width: 34px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .tool button.active {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+    }
+
+    .canvas-actions {
+      padding: 14px 12px;
+      display: grid;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 1px solid var(--stroke);
+    }
+
+    .canvas-actions button {
+      min-height: 38px;
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #dce5f0;
+      text-align: left;
+    }
+
+    .canvas-actions button.primary {
+      background: linear-gradient(135deg, #5a57ff, #6d35d7);
+      color: white;
+    }
+
+    .rightbar {
+      padding: 82px 14px 14px 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 10px;
+    }
+
+    .panel {
+      padding: 14px;
+    }
+
+    .output {
+      min-height: 260px;
+      display: grid;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .output-orbit {
+      width: 166px;
+      height: 166px;
+      margin-top: 16px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(125, 76, 255, 0.42);
+      background:
+        radial-gradient(circle, rgba(72, 240, 106, 0.08), transparent 54%),
+        rgba(0, 0, 0, 0.18);
+      box-shadow: 0 0 38px rgba(125, 76, 255, 0.18);
+      border-radius: 50%;
+    }
+
+    .output h3 {
+      margin: 12px 0 2px;
+      color: var(--green);
+      font-size: 24px;
+    }
+
+    .output p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .activity-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .clear-button {
+      background: transparent;
+      color: #9e78ff;
+      font-size: 12px;
+    }
+
+    #clearActivity {
+      display: none;
+    }
+
+    .activity-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .activity {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .activity svg {
+      color: var(--green);
+    }
+
+    .activity time {
+      color: var(--soft);
+      font-size: 11px;
+    }
+
+    .help {
+      align-self: end;
+    }
+
+    .help h2 {
+      color: #9d7dff;
+      margin-bottom: 12px;
+    }
+
+    .help-item {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 8px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .help-item strong {
+      display: block;
+      color: var(--green);
+      font-size: 12px;
+    }
+
+    .help-item svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .help-item.blue svg {
+      color: #2e85ff;
+    }
+
+    .help-item.green svg {
+      color: var(--green);
+    }
+
+    .help-item.violet svg {
+      color: #9b4dff;
+    }
+
+    .help-item.white svg {
+      color: #f3f5fb;
+    }
+
+    .help-item.yellow svg,
+    .help-item.yellow strong {
+      color: #ffd42a;
+    }
+
+    .help-item.red svg,
+    .help-item.red strong {
+      color: #ff3048;
+    }
+
+    .writing-help {
+      display: none;
+    }
+
+    .app.writing-active .gesture-help {
+      display: none;
+    }
+
+    .app.writing-active .writing-help {
+      display: block;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 20;
+      min-width: 220px;
+      padding: 13px 16px;
+      border: 1px solid rgba(72, 240, 106, 0.35);
+      background: rgba(10, 16, 24, 0.94);
+      color: var(--text);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.36);
+      opacity: 0;
+      transform: translateY(14px);
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+      font-size: 13px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .dashboard-panel {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+      align-content: start;
+    }
+
+    .dashboard-hero,
+    .dash-card,
+    .dash-preview,
+    .dash-activity,
+    .dash-actions,
+    .dash-analytics,
+    .dash-system,
+    .dash-tips,
+    .dash-logs {
+      border: 1px solid rgba(116, 128, 147, 0.22);
+      background:
+        linear-gradient(145deg, rgba(9, 17, 30, 0.88), rgba(5, 11, 20, 0.82)),
+        radial-gradient(circle at top left, rgba(125, 76, 255, 0.08), transparent 16rem);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 44px rgba(0, 0, 0, 0.22);
+      border-radius: 6px;
+    }
+
+    .dashboard-hero {
+      grid-column: 1 / -1;
+      min-height: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .dashboard-hero::after {
+      content: "";
+      position: absolute;
+      right: 24px;
+      top: -70px;
+      width: 260px;
+      height: 260px;
+      border: 1px solid rgba(40, 216, 255, 0.18);
+      border-radius: 50%;
+      box-shadow: inset 0 0 60px rgba(72, 240, 106, 0.06), 0 0 70px rgba(125, 76, 255, 0.12);
+      pointer-events: none;
+    }
+
+    .dashboard-hero h2 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.1;
+    }
+
+    .dashboard-hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .hero-pulse {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 10px;
+    }
+
+    .hero-chip {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(2, 8, 16, 0.54);
+      color: var(--muted);
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    .dash-card {
+      grid-column: span 2;
+      min-height: 134px;
+      padding: 18px;
+      display: grid;
+      align-content: space-between;
+    }
+
+    .dash-card-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(72, 240, 106, 0.11);
+      color: var(--green);
+      box-shadow: 0 0 28px rgba(72, 240, 106, 0.12);
+    }
+
+    .dash-card-icon svg,
+    .dash-action svg,
+    .dash-tip svg,
+    .dash-analytic svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dash-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dash-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 28px;
+      color: var(--text);
+    }
+
+    .dash-card small {
+      display: block;
+      margin-top: 8px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .dash-camera-toggle {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 0 10px;
+      border: 1px solid rgba(72, 240, 106, 0.24);
+      background: rgba(72, 240, 106, 0.08);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .dash-camera-toggle.camera-off {
+      border-color: rgba(255, 94, 122, 0.4);
+      background: rgba(255, 94, 122, 0.08);
+    }
+
+    .dash-card.purple .dash-card-icon {
+      color: #9b4dff;
+      background: rgba(155, 77, 255, 0.14);
+    }
+
+    .dash-card.cyan .dash-card-icon {
+      color: var(--cyan);
+      background: rgba(40, 216, 255, 0.12);
+    }
+
+    .dash-card.yellow .dash-card-icon {
+      color: #ffd42a;
+      background: rgba(255, 212, 42, 0.12);
+    }
+
+    .dash-card.pink .dash-card-icon {
+      color: #ff4fc3;
+      background: rgba(255, 79, 195, 0.12);
+    }
+
+    .dash-preview {
+      grid-column: span 5;
+      padding: 18px;
+    }
+
+    .dash-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .dash-section-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .dash-live {
+      color: var(--green);
+      background: rgba(72, 240, 106, 0.1);
+      border: 1px solid rgba(72, 240, 106, 0.18);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .dash-preview-frame {
+      position: relative;
+      min-height: 230px;
+      overflow: hidden;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(145deg, rgba(11, 24, 39, 0.92), rgba(6, 12, 22, 0.92)),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 26px);
+    }
+
+    .dash-preview-frame img {
+      width: 100%;
+      height: 100%;
+      min-height: 230px;
+      object-fit: cover;
+      opacity: 0.72;
+      filter: saturate(0.85) contrast(0.92);
+    }
+
+    .dash-preview-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dash-activity {
+      grid-column: span 4;
+      padding: 18px;
+    }
+
+    .dash-actions {
+      grid-column: span 3;
+      padding: 18px;
+    }
+
+    .dash-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .dash-row {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .dash-row i {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(72, 240, 106, 0.1);
+      color: var(--green);
+      font-style: normal;
+      font-weight: 900;
+    }
+
+    .dash-row time {
+      color: var(--soft);
+      font-size: 12px;
+    }
+
+    .dash-action {
+      width: 100%;
+      min-height: 76px;
+      display: grid;
+      grid-template-columns: 42px 1fr 18px;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 0 14px;
+      border: 1px solid rgba(155, 77, 255, 0.5);
+      background: rgba(85, 45, 255, 0.12);
+      color: var(--text);
+      text-align: left;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .dash-action.cyan {
+      border-color: rgba(40, 216, 255, 0.48);
+      background: rgba(40, 216, 255, 0.1);
+    }
+
+    .dash-action.green {
+      border-color: rgba(72, 240, 106, 0.42);
+      background: rgba(72, 240, 106, 0.08);
+    }
+
+    .dash-analytics {
+      grid-column: span 4;
+      padding: 18px;
+    }
+
+    .dash-system {
+      grid-column: span 4;
+      padding: 18px;
+    }
+
+    .dash-analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .dash-analytics-grid.compact {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dash-analytic {
+      min-height: 112px;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(116, 128, 147, 0.18);
+      background: rgba(4, 10, 19, 0.44);
+      border-radius: 6px;
+    }
+
+    .dash-analytic svg {
+      color: var(--cyan);
+    }
+
+    .dash-analytic span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dash-analytic strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+    }
+
+    .gesture-analytics-wrap {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .gesture-donut {
+      width: 174px;
+      height: 174px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(5, 11, 20, 1) 0 42%, transparent 43%),
+        conic-gradient(#00d37b 0 30%, #287dff 30% 55%, #7a43ff 55% 70%, #ffc121 70% 82%, #ff6450 82% 91%, #c6ced8 91% 100%);
+      box-shadow: 0 0 38px rgba(40, 216, 255, 0.14);
+    }
+
+    .gesture-donut div {
+      width: 92px;
+      height: 92px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      border-radius: 50%;
+      background: #06101d;
+      text-align: center;
+    }
+
+    .gesture-donut strong {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .gesture-donut span {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .gesture-legend {
+      display: grid;
+      gap: 11px;
+    }
+
+    .gesture-legend div {
+      display: grid;
+      grid-template-columns: 10px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .gesture-legend i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c6ced8;
+    }
+
+    .gesture-legend strong {
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .gesture-legend .open {
+      background: #00d37b;
+    }
+
+    .gesture-legend .pointer {
+      background: #287dff;
+    }
+
+    .gesture-legend .victory {
+      background: #7a43ff;
+    }
+
+    .gesture-legend .thumb {
+      background: #ffc121;
+    }
+
+    .gesture-legend .fist {
+      background: #ff6450;
+    }
+
+    .dash-tips {
+      grid-column: span 4;
+      padding: 18px;
+    }
+
+    .dash-tip {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: start;
+      gap: 12px;
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .dash-tip svg {
+      color: var(--green);
+    }
+
+    .dash-logs {
+      grid-column: 1 / -1;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .history-view,
+    .settings-view {
+      background:
+        linear-gradient(145deg, rgba(9, 17, 30, 0.9), rgba(5, 11, 20, 0.86)),
+        radial-gradient(circle at top right, rgba(125, 76, 255, 0.08), transparent 24rem);
+      border-color: rgba(116, 128, 147, 0.24);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 44px rgba(0, 0, 0, 0.22);
+      border-radius: 6px;
+    }
+
+    .history-view h2,
+    .settings-view h2 {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .history-view .stats-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .history-view .stat-box,
+    .settings-view .setting-card {
+      background:
+        linear-gradient(145deg, rgba(10, 20, 34, 0.82), rgba(4, 10, 18, 0.78));
+      border-color: rgba(116, 128, 147, 0.22);
+    }
+
+    .history-view .stat-box strong {
+      color: var(--text);
+      font-size: 28px;
+    }
+
+    .history-toolbar {
+      padding: 10px;
+      border: 1px solid rgba(116, 128, 147, 0.18);
+      background: rgba(3, 9, 17, 0.45);
+      border-radius: 6px;
+    }
+
+    .history-search,
+    .filter-button,
+    .danger-button,
+    .back-button,
+    .control-select {
+      border-radius: 5px;
+    }
+
+    .history-search:focus,
+    .control-select:focus {
+      outline: 1px solid rgba(125, 76, 255, 0.7);
+      border-color: rgba(125, 76, 255, 0.7);
+    }
+
+    .history-records {
+      padding: 10px;
+      border: 1px solid rgba(116, 128, 147, 0.18);
+      background: rgba(3, 9, 17, 0.36);
+      border-radius: 6px;
+      height: calc(100vh - 362px);
+      min-height: 560px;
+    }
+
+    .history-record {
+      background:
+        linear-gradient(145deg, rgba(12, 23, 38, 0.86), rgba(6, 13, 23, 0.84));
+    }
+
+    .record-title {
+      color: var(--text);
+    }
+
+    .record-preview {
+      border-radius: 5px;
+      background: rgba(125, 76, 255, 0.14);
+    }
+
+    .detail-preview {
+      border-radius: 5px;
+      background:
+        radial-gradient(circle at center, rgba(72, 240, 106, 0.08), transparent 58%),
+        rgba(3, 9, 17, 0.72);
+    }
+
+    .settings-layout {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .settings-view .setting-card {
+      min-height: 190px;
+    }
+
+    .settings-actions {
+      position: sticky;
+      bottom: 0;
+      padding-top: 16px;
+      background: linear-gradient(180deg, transparent, rgba(5, 11, 20, 0.94) 36%);
+    }
+
+    /* Reference-dashboard polish: dark glass panels, tight neon camera UI, and square controls. */
+    body {
+      background:
+        radial-gradient(circle at 22% 8%, rgba(125, 76, 255, 0.15), transparent 22rem),
+        radial-gradient(circle at 88% 20%, rgba(40, 216, 255, 0.08), transparent 24rem),
+        linear-gradient(135deg, #030811 0%, #07111e 48%, #03070d 100%);
+      padding: 0;
+    }
+
+    .app {
+      width: min(1440px, 100vw);
+      min-height: 100vh;
+      grid-template-columns: 220px minmax(760px, 1fr) 310px;
+      border: 1px solid rgba(116, 128, 147, 0.22);
+      background:
+        linear-gradient(145deg, rgba(7, 12, 21, 0.98), rgba(3, 8, 15, 0.98)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 80px);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62);
+    }
+
+    .sidebar {
+      padding: 30px 14px;
+      background: rgba(2, 8, 16, 0.82);
+      border-right-color: rgba(116, 128, 147, 0.22);
+    }
+
+    .brand {
+      grid-template-columns: 50px 1fr;
+      margin-bottom: 42px;
+    }
+
+    .brand-mark {
+      width: 50px;
+      height: 50px;
+      border-color: rgba(141, 77, 255, 0.78);
+      background: linear-gradient(135deg, rgba(72, 42, 255, 0.22), rgba(133, 57, 255, 0.14));
+      color: #9b5cff;
+      box-shadow: 0 0 22px rgba(125, 76, 255, 0.22);
+      border-radius: 6px;
+    }
+
+    .brand h1 {
+      font-size: 21px;
+    }
+
+    .brand span,
+    .brand p,
+    .title span,
+    .system-card h2,
+    .help h2,
+    .clear-button {
+      color: #934fff;
+    }
+
+    .nav {
+      gap: 14px;
+    }
+
+    .nav button {
+      min-height: 56px;
+      grid-template-columns: 28px 1fr;
+      padding: 0 16px;
+      font-size: 18px;
+      color: #f2f5fb;
+      border-radius: 5px;
+    }
+
+    .nav button.active {
+      background: linear-gradient(135deg, #3652ff, #8238ff);
+      box-shadow: 0 16px 32px rgba(99, 59, 255, 0.34);
+    }
+
+    .nav svg,
+    .brand svg,
+    .metric svg,
+    .activity svg,
+    .mode svg,
+    .tool svg,
+    .canvas-actions svg,
+    .icon-button svg {
+      width: 23px;
+      height: 23px;
+    }
+
+    .system-card {
+      margin-top: 96px;
+      padding: 18px 16px;
+      background: rgba(8, 15, 26, 0.72);
+      border-color: rgba(116, 128, 147, 0.22);
+      border-radius: 5px;
+    }
+
+    .system-card h2,
+    .panel h2,
+    .camera-card h2 {
+      font-size: 16px;
+    }
+
+    .status-row {
+      margin-top: 16px;
+      font-size: 15px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+    }
+
+    .main {
+      padding: 20px 18px 16px;
+      gap: 12px;
+    }
+
+    .topbar {
+      min-height: 58px;
+    }
+
+    .title h2 {
+      font-size: 29px;
+      font-weight: 900;
+    }
+
+    .title p {
+      font-size: 16px;
+    }
+
+    .pill {
+      min-height: 50px;
+      padding: 0 18px;
+      font-size: 18px;
+      background: rgba(9, 17, 29, 0.75);
+      border-color: rgba(116, 128, 147, 0.25);
+      border-radius: 5px;
+    }
+
+    .icon-button {
+      width: 50px;
+      height: 50px;
+      border-radius: 5px;
+      background: rgba(9, 17, 29, 0.75);
+      border-color: rgba(116, 128, 147, 0.25);
+    }
+
+    .mode-switch {
+      width: 100%;
+      justify-self: stretch;
+      gap: 0;
+      padding: 10px 30px;
+      border-color: rgba(116, 128, 147, 0.22);
+      background: rgba(8, 15, 26, 0.74);
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+      border-radius: 5px;
+    }
+
+    .mode {
+      min-height: 94px;
+      grid-template-columns: 52px 1fr;
+      padding: 0 36px;
+      font-size: 18px;
+      border-radius: 5px;
+    }
+
+    .mode.active {
+      background: linear-gradient(135deg, #4b5dff, #8436ff);
+    }
+
+    .mode strong {
+      font-size: 22px;
+    }
+
+    .mode span {
+      font-size: 16px;
+    }
+
+    .camera-card,
+    .metrics,
+    .canvas,
+    .panel,
+    .view-panel {
+      background: rgba(8, 15, 26, 0.72);
+      border-color: rgba(116, 128, 147, 0.22);
+      border-radius: 5px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .camera-card {
+      min-height: 0;
+      padding: 16px;
+    }
+
+    .card-title {
+      min-height: 38px;
+      font-size: 18px;
+    }
+
+    .camera-feed {
+      min-height: 0;
+      aspect-ratio: 16 / 9;
+      height: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+    }
+
+    .feed-badge {
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 4px;
+      background: rgba(10, 14, 19, 0.74);
+      font-size: 16px;
+      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.24);
+    }
+
+    .logging-badge {
+      min-height: 34px;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    .fullscreen-button {
+      min-height: 46px;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    .metrics {
+      padding: 10px;
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 118px;
+      grid-template-columns: 44px 1fr;
+      justify-items: center;
+      text-align: center;
+      border-color: rgba(116, 128, 147, 0.18);
+      background: rgba(6, 13, 23, 0.76);
+      border-radius: 5px;
+    }
+
+    .metric small {
+      font-size: 16px;
+    }
+
+    .metric strong {
+      font-size: 26px;
+    }
+
+    .metric-icon {
+      background: transparent;
+    }
+
+    .progress {
+      height: 5px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .canvas {
+      min-height: 286px;
+      grid-template-columns: 1fr 130px;
+      padding: 16px;
+      gap: 18px;
+    }
+
+    .canvas-board {
+      border-radius: 4px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .canvas-board h2 {
+      position: relative;
+      z-index: 3;
+      color: var(--text);
+      font-size: 18px;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    .writing {
+      left: 120px;
+      top: 70px;
+      font-size: clamp(78px, 9vw, 148px);
+    }
+
+    .writing.empty {
+      left: 120px;
+      top: 104px;
+      font-size: 28px;
+    }
+
+    .writing {
+      display: none !important;
+    }
+
+    .tool {
+      top: 50px;
+      left: 16px;
+      z-index: 4;
+    }
+
+    .canvas-actions {
+      border-left: 0;
+      background: transparent;
+      padding: 42px 0 10px;
+      gap: 16px;
+    }
+
+    .canvas-actions button {
+      min-height: 56px;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .canvas-actions button.primary {
+      background: linear-gradient(135deg, #5338ff, #853cff);
+    }
+
+    .rightbar {
+      padding: 88px 14px 16px 0;
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 22px 18px;
+    }
+
+    .output {
+      min-height: 342px;
+    }
+
+    .output-orbit {
+      width: 180px;
+      height: 180px;
+      border-width: 2px;
+      border-color: #8f35ff;
+      box-shadow: 0 0 34px rgba(143, 53, 255, 0.28), inset 0 0 34px rgba(72, 240, 106, 0.05);
+    }
+
+    .output h3 {
+      font-size: 31px;
+      font-weight: 900;
+    }
+
+    .activity {
+      grid-template-columns: 28px 1fr auto;
+      font-size: 16px;
+      gap: 12px;
+    }
+
+    .help-item {
+      grid-template-columns: 28px 1fr;
+      gap: 14px;
+      margin-top: 22px;
+      font-size: 14px;
+    }
+
+    .help-item strong {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 1050px) {
+      body {
+        padding: 0;
+      }
+
+      .app {
+        min-height: 100vh;
+        grid-template-columns: 82px 1fr;
+      }
+
+      .app.dashboard-active .main {
+        grid-column: 2;
+      }
+
+      .app.history-active .main,
+      .app.settings-active .main {
+        grid-column: 2;
+      }
+
+      .dashboard-panel > * {
+        grid-column: 1 / -1;
+      }
+
+      .sidebar {
+        padding: 18px 10px;
+      }
+
+      .brand {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+
+      .brand h1,
+      .brand p,
+      .nav span,
+      .system-card {
+        display: none;
+      }
+
+      .nav button {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding: 0;
+      }
+
+      .rightbar {
+        grid-column: 2;
+        padding: 0 14px 14px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+      }
+
+      .help {
+        display: none;
+      }
+    }
+
+    body.light-mode .app,
+    body.light-mode .dashboard-hero,
+    body.light-mode .dash-card,
+    body.light-mode .dash-preview,
+    body.light-mode .dash-activity,
+    body.light-mode .dash-actions,
+    body.light-mode .dash-analytics,
+    body.light-mode .dash-system,
+    body.light-mode .dash-tips,
+    body.light-mode .dash-logs,
+    body.light-mode .history-view,
+    body.light-mode .settings-view,
+    body.light-mode .setting-card,
+    body.light-mode .history-summary-card,
+    body.light-mode .history-detail,
+    body.light-mode .history-record,
+    body.light-mode .history-records,
+    body.light-mode .stat-box,
+    body.light-mode .panel,
+    body.light-mode .camera-card,
+    body.light-mode .metrics,
+    body.light-mode .canvas,
+    body.light-mode .mode-switch,
+    body.light-mode .writing-toolbar {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.16);
+      color: #0f172a;
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    body.light-mode .dash-card,
+    body.light-mode .dash-preview,
+    body.light-mode .dash-activity,
+    body.light-mode .dash-actions,
+    body.light-mode .dash-analytics,
+    body.light-mode .dash-system,
+    body.light-mode .dash-tips,
+    body.light-mode .setting-card,
+    body.light-mode .history-summary-card,
+    body.light-mode .history-detail,
+    body.light-mode .history-record,
+    body.light-mode .stat-box,
+    body.light-mode .metric,
+    body.light-mode .dash-analytic {
+      background: linear-gradient(145deg, #ffffff, #f3f7fb);
+    }
+
+    body.light-mode .sidebar {
+      background: #f8fbff;
+      border-right-color: rgba(15, 23, 42, 0.14);
+    }
+
+    body.light-mode .title h2,
+    body.light-mode .dashboard-hero h2,
+    body.light-mode .history-view h2,
+    body.light-mode .settings-view h2,
+    body.light-mode .dash-section-head h3,
+    body.light-mode .setting-card h3,
+    body.light-mode .panel h2,
+    body.light-mode .camera-card h2,
+    body.light-mode .metric strong,
+    body.light-mode .dash-card strong,
+    body.light-mode .dash-analytic strong,
+    body.light-mode .record-title,
+    body.light-mode .detail-row strong,
+    body.light-mode .control-copy span,
+    body.light-mode .about-list strong {
+      color: #0f172a;
+    }
+
+    body.light-mode .title p,
+    body.light-mode .dashboard-hero p,
+    body.light-mode .view-panel p,
+    body.light-mode .dash-preview-note,
+    body.light-mode .dash-tip,
+    body.light-mode .record-meta,
+    body.light-mode .detail-row,
+    body.light-mode .control-copy small,
+    body.light-mode .about-list,
+    body.light-mode .status-row,
+    body.light-mode .dash-card span,
+    body.light-mode .dash-analytic span,
+    body.light-mode .gesture-legend div,
+    body.light-mode .dash-logs {
+      color: #475569;
+    }
+
+    body.light-mode .nav button {
+      color: #334155;
+    }
+
+    body.light-mode .nav button.active,
+    body.light-mode .filter-button.active,
+    body.light-mode .mode.active,
+    body.light-mode .canvas-actions button.primary {
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      box-shadow: 0 12px 26px rgba(79, 140, 255, 0.22);
+    }
+
+    body.light-mode .filter-button,
+    body.light-mode .danger-button,
+    body.light-mode .back-button,
+    body.light-mode .control-select,
+    body.light-mode .history-search,
+    body.light-mode .pill,
+    body.light-mode .icon-button,
+    body.light-mode .dash-camera-toggle,
+    body.light-mode .canvas-actions button,
+    body.light-mode .tool button,
+    body.light-mode .ink-button,
+    body.light-mode .dash-action {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      color: #0f172a;
+      box-shadow: none;
+    }
+
+    body.light-mode .dash-action {
+      background: linear-gradient(145deg, #ffffff, #eef6ff);
+    }
+
+    body.light-mode .dash-action.cyan {
+      border-color: rgba(2, 132, 199, 0.35);
+    }
+
+    body.light-mode .dash-action.green {
+      border-color: rgba(22, 163, 74, 0.35);
+    }
+
+    body.light-mode .danger-button,
+    body.light-mode .record-delete {
+      color: #dc2626;
+      border-color: rgba(220, 38, 38, 0.35);
+    }
+
+    body.light-mode .clear-button,
+    body.light-mode .brand span,
+    body.light-mode .system-card h2,
+    body.light-mode .help h2 {
+      color: var(--violet);
+    }
+
+    body.light-mode .camera-feed,
+    body.light-mode .dash-preview-frame,
+    body.light-mode .detail-preview,
+    body.light-mode .canvas-board {
+      background: #eaf0f7;
+      color: #0f172a;
+    }
+
+    body.light-mode .dash-row i,
+    body.light-mode .dash-card-icon,
+    body.light-mode .metric-icon {
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    body.light-mode .gesture-donut div {
+      background: #ffffff;
+    }
+
+    body.light-mode .logging-badge,
+    body.light-mode .feed-badge,
+    body.light-mode .dash-live,
+    body.light-mode .hero-chip {
+      background: #eef6ff;
+      border-color: rgba(15, 23, 42, 0.14);
+      color: #166534;
+    }
+
+    body.light-mode .writing {
+      color: #22c55e;
+    }
+
+    body.light-mode option {
+      background: #ffffff;
+      color: #0f172a;
+    }
+
+    body.light-mode .mode {
+      color: #334155;
+    }
+
+    body.light-mode .mode span {
+      opacity: 0.9;
+    }
+
+    body.light-mode .toggle span {
+      background: #e2e8f0;
+      border-color: rgba(15, 23, 42, 0.18);
+    }
+
+    body.light-mode .toggle span::after {
+      background: #64748b;
+    }
+
+    body.light-mode .toggle input:checked + span {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+    }
+
+    body.light-mode .settings-actions {
+      background: linear-gradient(180deg, transparent, rgba(248, 251, 255, 0.96) 36%);
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main,
+      .rightbar {
+        grid-column: 1;
+      }
+
+      .app.dashboard-active .main {
+        grid-column: 1;
+      }
+
+      .app.history-active .main,
+      .app.settings-active .main {
+        grid-column: 1;
+      }
+
+      .topbar,
+      .top-status {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .mode-switch,
+      .writing-toolbar,
+      .dashboard-panel,
+      .metrics,
+      .canvas,
+      .rightbar {
+        grid-template-columns: 1fr;
+      }
+
+      .rightbar {
+        padding: 0 14px 14px;
+      }
+
+      .writing {
+        left: 80px;
+        top: 50px;
+      }
+    }
+
+    /* Final consistency layer: gesture and writing must not jump in size. */
+    .app.gesture-active,
+    .app.writing-active {
+      grid-template-columns: 190px minmax(0, 1fr) 270px;
+    }
+
+    .app.gesture-active .main,
+    .app.writing-active .main {
+      grid-template-rows: auto auto auto auto;
+    }
+
+    .app.gesture-active .mode-switch,
+    .app.writing-active .mode-switch {
+      width: 100%;
+      justify-self: stretch;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .app.gesture-active .mode,
+    .app.writing-active .mode {
+      min-height: 78px;
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: 14px;
+      padding: 0 24px;
+    }
+
+    .app.gesture-active .mode strong,
+    .app.writing-active .mode strong {
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .app.gesture-active .mode span,
+    .app.writing-active .mode span {
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .app.gesture-active .camera-card,
+    .app.writing-active .camera-card {
+      min-height: 0;
+      padding: 14px;
+    }
+
+    .app.gesture-active .camera-feed,
+    .app.writing-active .camera-feed {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      min-height: 0;
+      height: auto;
+      max-height: none;
+    }
+
+    .app.gesture-active .camera-feed img,
+    .app.writing-active .camera-feed img {
+      object-fit: fill;
+    }
+
+    .app.writing-active .camera-tool-overlay {
+      top: clamp(58px, 12%, 82px);
+      left: clamp(12px, 2.6%, 28px);
+      right: clamp(12px, 2.6%, 28px);
+      gap: clamp(6px, 1vw, 12px);
+    }
+
+    .app.writing-active .camera-tool-overlay span {
+      min-height: clamp(36px, 5vw, 54px);
+      font-size: clamp(10px, 1.1vw, 15px);
+    }
+
+    @media (max-width: 1050px) {
+      .app.gesture-active,
+      .app.writing-active {
+        grid-template-columns: 82px minmax(0, 1fr);
+      }
+
+      .app.gesture-active .mode,
+      .app.writing-active .mode {
+        min-height: 70px;
+        padding: 0 16px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app.gesture-active,
+      .app.writing-active {
+        grid-template-columns: 1fr;
+      }
+
+      .app.gesture-active .mode-switch,
+      .app.writing-active .mode-switch {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app gesture-active" id="appShell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" />
+            <path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" />
+            <path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" />
+            <path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" />
+          </svg>
+        </div>
+        <div>
+          <h1>Vision <span>AI</span></h1>
+          <p>Gesture suite</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Main navigation">
+        <button class="active" data-nav data-view="dashboard">
+          <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
+          <span>Dashboard</span>
+        </button>
+        <button data-nav data-view="gesture">
+          <svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg>
+          <span>Gesture Mode</span>
+        </button>
+        <button data-nav data-view="writing">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>
+          <span>Writing Mode</span>
+        </button>
+        <button data-nav data-view="history">
+          <svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z" /><path d="M8 9h8" /><path d="M8 13h5" /></svg>
+          <span>History</span>
+        </button>
+        <button data-nav data-view="settings">
+          <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a8 8 0 0 0 .1-2l2-1.5-2-3.4-2.3.9a8 8 0 0 0-1.7-1L15.2 5h-4l-.3 3a8 8 0 0 0-1.7 1l-2.3-.9-2 3.4L7 13a8 8 0 0 0 .1 2l-2 1.5 2 3.4 2.3-.9a8 8 0 0 0 1.7 1l.3 3h4l.3-3a8 8 0 0 0 1.7-1l2.3.9 2-3.4L19.4 15Z" /></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="system-card">
+        <h2>System Status</h2>
+        <div class="status-row camera-toggle-row" id="sideCameraToggle" role="button" tabindex="0"><span>Camera</span><span class="dot"></span><span id="sideCamera">OFF</span></div>
+        <div class="status-row"><span>Model</span><span class="dot"></span><span>Loaded</span></div>
+        <div class="status-row"><span>FPS</span><span class="dot"></span><span id="sideFps">0.0</span></div>
+        <div class="status-row"><span>Hand</span><span class="dot"></span><span id="sideHand">Unknown</span></div>
+        <div class="status-row"><span>Motion</span><span class="dot"></span><span id="sideMotion">Stop</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="title">
+          <h2>Hand Gesture & <span>Air Writing System</span></h2>
+          <p>Real-time vision intelligence dashboard</p>
+        </div>
+        <div class="top-status" aria-label="Live system status">
+          <button class="pill" id="topCameraToggle" type="button"><span class="dot"></span>Camera: <strong id="topCamera">OFF</strong></button>
+          <span class="pill"><span class="dot"></span>Model: <strong>Loaded</strong></span>
+          <span class="pill">FPS: <strong id="topFps">0.0</strong></span>
+        </div>
+      </header>
+
+      <section class="dashboard-panel" aria-label="Dashboard overview">
+        <div class="dashboard-hero">
+          <div>
+            <h2>Dashboard</h2>
+            <p>Overview of your AI Hand Gesture & Air Writing System.</p>
+          </div>
+          <div class="hero-pulse">
+            <span class="hero-chip"><span class="dot"></span>Camera: <strong id="dashHeroCamera">OFF</strong></span>
+            <span class="hero-chip"><span class="dot"></span>Model: <strong>Loaded</strong></span>
+            <span class="hero-chip">FPS: <strong id="dashHeroFps">0.0</strong></span>
+          </div>
+        </div>
+
+        <article class="dash-card camera-control">
+          <div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M4 8h11a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4z" /><path d="m17 11 4-2v6l-4-2z" /></svg></div>
+          <div>
+            <span>Camera Status</span>
+            <button class="dash-camera-toggle" id="cameraToggle" type="button"><span class="dot"></span>Camera: <strong id="cameraState">STARTING</strong></button>
+            <small id="dashCameraSub">Waiting</small>
+          </div>
+        </article>
+        <article class="dash-card purple">
+          <div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M12 4a4 4 0 0 0-4 4v8a4 4 0 0 0 8 0V8a4 4 0 0 0-4-4Z" /><path d="M8 10H5" /><path d="M19 10h-3" /><path d="M8 14H5" /><path d="M19 14h-3" /></svg></div>
+          <div><span>Model Status</span><strong>Loaded</strong><small>AI Model Ready</small></div>
+        </article>
+        <article class="dash-card cyan">
+          <div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6" /></svg></div>
+          <div><span>FPS</span><strong id="dashFps">0.0</strong><small>Frames / Sec</small></div>
+        </article>
+        <article class="dash-card yellow">
+          <div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg></div>
+          <div><span>Total Gestures</span><strong id="dashTotalGestures">0</strong><small>Stored</small></div>
+        </article>
+        <article class="dash-card pink">
+          <div class="dash-card-icon"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg></div>
+          <div><span>Writing Sessions</span><strong id="dashWritingSessions">0</strong><small>Stored</small></div>
+        </article>
+
+        <section class="dash-preview">
+          <div class="dash-section-head"><h3>Small Camera Preview</h3><span class="dash-live" id="dashPreviewState">PREVIEW</span></div>
+          <div class="dash-preview-frame">
+            <img id="dashboardPreview" src="/snapshot.jpg" alt="Small camera preview">
+          </div>
+          <p class="dash-preview-note">Preview only. Full recognition tools are inside Gesture Mode and Writing Mode.</p>
+        </section>
+
+        <section class="dash-activity">
+          <div class="dash-section-head"><h3>Recent Activity</h3><span class="clear-button">System</span></div>
+          <div class="dash-list" id="dashboardActivity">
+            <div class="dash-row"><i>G</i><span>Open Hand detected</span><time>Ready</time></div>
+            <div class="dash-row"><i>P</i><span>Pointer gesture standby</span><time>Idle</time></div>
+            <div class="dash-row"><i>W</i><span>Air writing module ready</span><time>Ready</time></div>
+          </div>
+        </section>
+
+        <section class="dash-actions">
+          <div class="dash-section-head"><h3>Quick Buttons</h3></div>
+          <button class="dash-action" data-dashboard-view="gesture" type="button"><svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg><span>Open Gesture Mode</span><strong>&gt;</strong></button>
+          <button class="dash-action cyan" data-dashboard-view="writing" type="button"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg><span>Open Writing Mode</span><strong>&gt;</strong></button>
+          <button class="dash-action green" data-dashboard-view="history" type="button"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z" /><path d="M8 9h8" /><path d="M8 13h5" /></svg><span>View History</span><strong>&gt;</strong></button>
+        </section>
+
+        <section class="dash-analytics">
+          <div class="dash-section-head"><h3>Gesture Analytics <span>(Today)</span></h3></div>
+          <div class="gesture-analytics-wrap">
+            <div class="gesture-donut" id="gestureDonut">
+              <div><strong id="gestureDonutTotal">0</strong><span>Total</span></div>
+            </div>
+            <div class="gesture-legend">
+              <div><i class="open"></i><span>Open Hand</span><strong id="countOpen">0 (0%)</strong></div>
+              <div><i class="pointer"></i><span>Pointer</span><strong id="countPointer">0 (0%)</strong></div>
+              <div><i class="victory"></i><span>Victory / Peace</span><strong id="countVictory">0 (0%)</strong></div>
+              <div><i class="thumb"></i><span>Thumbs Up</span><strong id="countThumb">0 (0%)</strong></div>
+              <div><i class="fist"></i><span>Closed Fist</span><strong id="countFist">0 (0%)</strong></div>
+              <div><i class="other"></i><span>Others</span><strong id="countOther">0 (0%)</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dash-system">
+          <div class="dash-section-head"><h3>System Overview</h3></div>
+          <div class="dash-analytics-grid compact">
+            <div class="dash-analytic"><svg viewBox="0 0 24 24"><path d="M12 3v18" /><path d="M3 12h18" /><circle cx="12" cy="12" r="4" /></svg><div><span>Confidence</span><strong id="dashConfidence">0.0%</strong><small class="green">Live</small></div></div>
+            <div class="dash-analytic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg><div><span>Tracking Status</span><strong id="dashTracking">Idle</strong><small class="green">Overview</small></div></div>
+            <div class="dash-analytic"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6" /></svg><div><span>Motion Status</span><strong id="dashMotion">Stop</strong><small class="green">Sensor</small></div></div>
+            <div class="dash-analytic"><svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg><div><span>Hand Detected</span><strong id="dashHand">No</strong><small class="green">Camera</small></div></div>
+          </div>
+        </section>
+
+        <section class="dash-tips">
+          <div class="dash-section-head"><h3>Tips / Info Panel</h3></div>
+          <div class="dash-tip"><svg viewBox="0 0 24 24"><path d="M12 2v4" /><path d="M12 18v4" /><path d="m4.9 4.9 2.8 2.8" /><path d="m16.3 16.3 2.8 2.8" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="m4.9 19.1 2.8-2.8" /><path d="m16.3 7.7 2.8-2.8" /></svg><span>Keep hand clearly inside the camera frame.</span></div>
+          <div class="dash-tip"><svg viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg><span>Use Writing Mode for canvas, color, eraser, and clear controls.</span></div>
+          <div class="dash-tip"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg><span>Dashboard is overview only; detailed detection stays in Gesture Mode.</span></div>
+        </section>
+
+        <div class="dash-logs">
+          <span>System activity logs: camera, model, gestures, writing sessions, and history counters.</span>
+          <strong>Vision AI Gesture Suite v1.0.0</strong>
+        </div>
+      </section>
+
+      <section class="mode-switch" aria-label="Mode switch">
+        <div class="mode active" id="gestureMode" role="button" tabindex="0">
+          <svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg>
+          <div><strong>Gesture Mode</strong><span>Recognize hand gestures</span></div>
+        </div>
+        <div class="mode" id="writingMode" role="button" tabindex="0">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>
+          <div><strong>Writing Mode</strong><span>Air writing and drawing</span></div>
+        </div>
+      </section>
+
+      <section class="writing-toolbar" aria-label="Writing tools">
+        <button class="ink-button blue" data-ink="blue" type="button">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>
+          <span>Blue</span>
+        </button>
+        <button class="ink-button green active" data-ink="green" type="button">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>
+          <span>Green</span>
+        </button>
+        <button class="ink-button red" data-ink="red" type="button">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>
+          <span>Red</span>
+        </button>
+        <button class="ink-button eraser" data-tool="eraser" aria-label="Eraser" type="button">
+          <svg viewBox="0 0 24 24"><path d="m7 21-4-4L14 6a3 3 0 0 1 4 4L8 21Z" /><path d="M14 21H7" /></svg>
+          <span>Eraser</span>
+        </button>
+        <button class="ink-button clear" id="clearCanvasTop" type="button">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m9 11 6 6" /><path d="m15 11-6 6" /><path d="M6 6l1 15h10l1-15" /></svg>
+          <span>Clear</span>
+        </button>
+      </section>
+
+      <section class="camera-card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 8h11a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4z" fill="none" stroke="currentColor" stroke-width="2" /><path d="m17 11 4-2v6l-4-2z" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+          <h2>Live Camera Feed</h2>
+          <button class="fullscreen-button" id="fullscreenCamera" type="button" title="Open camera fullscreen">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+              <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+              <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+              <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+            </svg>
+            <span id="fullscreenCameraText">Full Screen</span>
+          </button>
+        </div>
+        <div class="camera-feed" id="cameraFeed">
+          <img id="cameraVideo" src="/snapshot.jpg" alt="Live gesture detection feed" />
+          <div class="camera-message" id="cameraMessage">Starting Python camera detection...</div>
+          <span class="feed-badge left" id="fpsBadge">FPS: --</span>
+          <span class="feed-badge right" id="trackingBadge">Tracking: WAITING</span>
+          <div class="logging-badge" id="loggingBadge">
+            <strong id="loggingModeText">LIVE</strong>
+            <span id="loggingLabelText">NO LABEL</span>
+          </div>
+          <div class="camera-tool-overlay" aria-label="Camera writing controls">
+            <span data-camera-tool="blue">BLUE</span>
+            <span data-camera-tool="green" class="active">GREEN</span>
+            <span data-camera-tool="red">RED</span>
+            <span data-camera-tool="eraser">ERASER</span>
+            <span data-camera-tool="clear">CLEAR</span>
+          </div>
+          <div class="hand-stage">
+            <div class="tracking-box"></div>
+            <svg class="hand-svg" viewBox="0 0 300 255" aria-hidden="true">
+              <path d="M132 224c-28-29-32-70-28-111 2-18 19-18 24-2l6 31V38c0-15 23-15 24 0l5 95 12-101c2-15 25-12 23 4l-10 101 24-86c4-14 25-8 22 7l-21 91 37-48c10-12 28 1 19 15l-49 74c-17 27-59 44-88 34Z" fill="#d79055" />
+              <path d="M134 224c-25-27-29-65-26-103 2-13 14-13 18-2l8 34V43c0-11 16-11 17 0l6 106 18-114c1-10 17-8 16 3l-12 113 29-96c3-10 18-5 16 6l-25 101 43-55c7-9 20 1 14 11l-44 67c-16 25-49 43-78 39Z" fill="#e5a16b" opacity=".82" />
+              <g stroke="#48f06a" stroke-width="2" fill="none">
+                <path d="M148 214 142 58" />
+                <path d="M148 214 180 53" />
+                <path d="M148 214 212 79" />
+                <path d="M148 214 247 116" />
+                <path d="M148 214 115 132" />
+                <path d="M115 132 126 154" />
+                <path d="M142 58 151 121 148 160" />
+                <path d="M180 53 176 125 168 162" />
+                <path d="M212 79 201 137 188 169" />
+                <path d="M247 116 226 153 205 178" />
+              </g>
+              <g fill="#48f06a" stroke="#ff5e37" stroke-width="3">
+                <circle cx="148" cy="214" r="5" /><circle cx="142" cy="58" r="5" /><circle cx="180" cy="53" r="5" />
+                <circle cx="212" cy="79" r="5" /><circle cx="247" cy="116" r="5" /><circle cx="115" cy="132" r="5" />
+                <circle cx="151" cy="121" r="4" /><circle cx="176" cy="125" r="4" /><circle cx="201" cy="137" r="4" />
+                <circle cx="226" cy="153" r="4" /><circle cx="126" cy="154" r="4" />
+              </g>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics">
+        <div class="metric">
+          <div class="metric-icon"><svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg></div>
+          <div><small>Gesture</small><strong class="green" id="gestureMetric">Open Hand</strong></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 12h16" /><path d="m8 8-4 4 4 4" /><path d="m16 8 4 4-4 4" /></svg></div>
+          <div><small>Hand</small><strong id="handMetric">Unknown</strong></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></div>
+          <div><small>Confidence</small><strong class="green" id="confidenceMetric">0.0%</strong><div class="progress"><span id="confidenceBar"></span></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18" /><path d="M3 12h18" /><circle cx="12" cy="12" r="4" /></svg></div>
+          <div><small>Landmarks</small><strong id="landmarkMetric">0 / 21</strong></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><svg viewBox="0 0 24 24"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="9" /></svg></div>
+          <div><small>Motion</small><strong id="motionMetric">Stop</strong></div>
+        </div>
+      </section>
+
+      <section class="gesture-insights" aria-label="Gesture mode analytics">
+        <article class="insight-card guide-card">
+          <h3>Gesture Guide</h3>
+          <div class="guide-row green"><span>Open Hand</span><small>No action</small></div>
+          <div class="guide-row blue"><span>Pointer</span><small>Select / Point</small></div>
+          <div class="guide-row violet"><span>Victory / Peace</span><small>Change color</small></div>
+          <div class="guide-row yellow"><span>Thumbs Up / Down</span><small>Increase / Decrease</small></div>
+          <div class="guide-row red"><span>Closed Fist</span><small>Stop writing</small></div>
+        </article>
+        <article class="insight-card landmark-card">
+          <h3>Hand Landmarks</h3>
+          <div class="mini-hand">
+            <svg viewBox="0 0 120 160" aria-hidden="true">
+              <path d="M60 142 43 116 28 92 20 70M60 142 58 92 56 42M60 142 72 92 78 32M60 142 88 100 104 58M60 142 34 126 12 112" />
+              <g>
+                <circle cx="60" cy="142" r="4"/><circle cx="43" cy="116" r="3"/><circle cx="28" cy="92" r="3"/><circle cx="20" cy="70" r="3"/>
+                <circle cx="58" cy="92" r="3"/><circle cx="56" cy="42" r="3"/><circle cx="72" cy="92" r="3"/><circle cx="78" cy="32" r="3"/>
+                <circle cx="88" cy="100" r="3"/><circle cx="104" cy="58" r="3"/><circle cx="34" cy="126" r="3"/><circle cx="12" cy="112" r="3"/>
+              </g>
+            </svg>
+          </div>
+          <strong id="insightLandmarks">0 / 21</strong>
+          <span>Landmarks Detected</span>
+        </article>
+        <article class="insight-card confidence-card">
+          <h3>Confidence Meter</h3>
+          <div class="confidence-ring"><strong id="insightConfidence">0.0%</strong><span>Confidence</span></div>
+          <div class="sparkline"></div>
+        </article>
+        <article class="insight-card quality-card">
+          <h3>Tracking Quality</h3>
+          <div class="quality-ring"><strong id="insightQuality">0%</strong><span id="insightQualityText">Idle</span></div>
+          <p><span class="dot"></span>Lighting <strong>Good</strong></p>
+          <p><span class="dot"></span>Visibility <strong id="insightVisibility">Idle</strong></p>
+          <p><span class="dot"></span>Stability <strong>Good</strong></p>
+        </article>
+        <article class="insight-card session-card">
+          <h3>Session Summary</h3>
+          <p><span>Session Time</span><strong id="sessionTime">00:00</strong></p>
+          <p><span>Gestures Detected</span><strong id="sessionGestures">0</strong></p>
+          <p><span>Avg. Confidence</span><strong id="sessionConfidence">0.0%</strong></p>
+          <p><span>Best Gesture</span><strong id="sessionBestGesture">No hand</strong></p>
+        </article>
+      </section>
+
+      <section class="canvas">
+        <div class="canvas-board">
+          <h2>Air Writing Canvas</h2>
+          <canvas class="air-canvas" id="airCanvas"></canvas>
+          <div class="tool">
+            <button class="active" aria-label="Pen" data-tool="pen"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg></button>
+            <button aria-label="Eraser" data-tool="eraser"><svg viewBox="0 0 24 24"><path d="m7 21-4-4L14 6a3 3 0 0 1 4 4L8 21Z" /><path d="M14 21H7" /></svg></button>
+            <button aria-label="Delete" data-tool="delete"><svg viewBox="0 0 24 24"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M6 7l1 14h10l1-14" /><path d="M9 7V4h6v3" /></svg></button>
+          </div>
+          <div class="writing" id="writingText">Point to write</div>
+        </div>
+        <div class="canvas-actions">
+          <button class="primary" id="clearCanvas" type="button"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>Clear</button>
+          <button id="saveCanvas" type="button"><svg viewBox="0 0 24 24"><path d="M5 20h14V8l-4-4H5z" /><path d="M8 20v-7h8v7" /><path d="M8 4v5h6" /></svg>Save</button>
+          <button id="exportCanvas" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12" /><path d="m7 8 5-5 5 5" /><path d="M5 21h14" /></svg>Export</button>
+        </div>
+      </section>
+
+      <section class="view-panel history-view">
+        <h2>History</h2>
+        <p>Search, filter, inspect, and manage gesture and air-writing records.</p>
+        <div class="stats-grid">
+          <div class="stat-box"><span>Total records</span><strong id="statTotal">0</strong></div>
+          <div class="stat-box"><span>Gesture mode used</span><strong id="statGesture">0</strong></div>
+          <div class="stat-box"><span>Air writing used</span><strong id="statWriting">0</strong></div>
+        </div>
+        <div class="history-toolbar">
+          <input class="history-search" id="historySearch" type="search" placeholder="Search history..." />
+          <button class="filter-button active" data-filter="all" type="button">All</button>
+          <button class="filter-button" data-filter="gesture" type="button">Gesture only</button>
+          <button class="filter-button" data-filter="writing" type="button">Writing only</button>
+          <button class="filter-button" data-filter="today" type="button">Today</button>
+          <button class="filter-button" data-filter="week" type="button">This week</button>
+          <button class="danger-button" id="clearAllHistory" type="button">Clear All History</button>
+        </div>
+        <div class="history-layout">
+          <div class="history-records" id="historyRecords"></div>
+          <aside class="history-side">
+            <div class="history-detail" id="historyDetail">
+              <div class="detail-preview">Select</div>
+              <div class="detail-row"><span>Record</span><strong>No record selected</strong></div>
+            </div>
+            <div class="history-summary-card">
+              <h3>Most Detected Gesture</h3>
+              <strong id="historyTopGesture">No records</strong>
+              <p id="historyTopGestureMeta">Waiting for live detections.</p>
+            </div>
+            <div class="history-summary-card">
+              <h3>Last Activity</h3>
+              <strong id="historyLastActivity">No activity yet</strong>
+              <p id="historyLastActivityMeta">Real-time activity appears here.</p>
+            </div>
+            <div class="history-summary-card">
+              <h3>Export Options</h3>
+              <button class="filter-button" id="exportAllHistory" type="button">Export All Records</button>
+              <button class="filter-button" id="exportFilteredHistory" type="button">Export Filtered Records</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view-panel settings-view">
+        <h2>Settings</h2>
+        <p>Customize mode behavior, camera detection, AI performance, interface, data, and privacy.</p>
+        <div class="settings-layout">
+          <div class="setting-card">
+            <h3>Mode Settings</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Default mode</span><small>Choose screen shown first</small></div>
+              <select class="control-select" id="settingDefaultMode">
+                <option value="gesture">Gesture Mode</option>
+                <option value="writing">Air Writing Mode</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Auto-switch</span><small>Move to writing after pointer gesture</small></div>
+              <label class="toggle"><input id="settingAutoSwitch" type="checkbox"><span></span></label>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>Camera Settings</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Camera power</span><small>Start or stop camera feed</small></div>
+              <button class="pill" id="settingsCameraToggle" type="button"><span class="dot"></span><strong id="settingsCamera">OFF</strong></button>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Sensitivity</span><small>Detection trigger level</small></div>
+              <select class="control-select" id="settingSensitivity">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Detection accuracy</span><small>Confidence threshold</small></div>
+              <input class="control-range" id="settingDetectionAccuracy" type="range" min="40" max="95" value="70">
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Camera device</span><small>Laptop built-in webcam is used</small></div>
+              <strong>Default webcam</strong>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>AI / Model Settings</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Model mode</span><small>Balance speed and precision</small></div>
+              <select class="control-select" id="settingModelMode">
+                <option value="fast">Fast mode</option>
+                <option value="accurate">Accurate mode</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Speed vs accuracy</span><small>Higher value favors accuracy</small></div>
+              <input class="control-range" id="settingSpeedAccuracy" type="range" min="1" max="10" value="6">
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>UI Settings</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Theme</span><small>Dark or light interface</small></div>
+              <select class="control-select" id="settingTheme">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Font size</span><small>Adjust dashboard text</small></div>
+              <input class="control-range" id="settingFontSize" type="range" min="90" max="115" value="100">
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Theme color</span><small>Accent color preference</small></div>
+              <select class="control-select" id="settingThemeColor">
+                <option value="blue">Blue / Purple</option>
+                <option value="green">Green</option>
+                <option value="orange">Orange</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>Data Settings</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Auto-save history</span><small>Store detections locally</small></div>
+              <label class="toggle"><input id="settingAutoSave" type="checkbox" checked><span></span></label>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Clear history</span><small>Remove all local records</small></div>
+              <button class="danger-button" id="settingsClearHistory" type="button">Clear</button>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Backup data</span><small>Optional cloud feature placeholder</small></div>
+              <button class="filter-button" id="settingsBackup" type="button">Backup</button>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Restore data</span><small>Restore from local backup file</small></div>
+              <button class="filter-button" id="settingsRestore" type="button">Restore</button>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>Notifications</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Gesture alerts</span><small>Show message when gesture changes</small></div>
+              <label class="toggle"><input id="settingGestureAlerts" type="checkbox" checked><span></span></label>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Writing saved alerts</span><small>Notify after saving canvas</small></div>
+              <label class="toggle"><input id="settingWritingAlerts" type="checkbox" checked><span></span></label>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>Privacy Settings</h3>
+            <div class="control-row">
+              <div class="control-copy"><span>Camera permission</span><small>Camera stays local in Python backend</small></div>
+              <label class="toggle"><input id="settingCameraPermission" type="checkbox" checked><span></span></label>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Data usage permission</span><small>Allow local history storage</small></div>
+              <label class="toggle"><input id="settingDataPermission" type="checkbox" checked><span></span></label>
+            </div>
+            <div class="control-row">
+              <div class="control-copy"><span>Offline mode</span><small>No online gesture API required</small></div>
+              <label class="toggle"><input id="settingOfflineMode" type="checkbox" checked><span></span></label>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3>About System</h3>
+            <div class="about-list">
+              <div><strong>System Name:</strong> Hand Gesture & Air Writing System</div>
+              <div><strong>Version:</strong> v1.0.0</div>
+              <div><strong>Technology:</strong> Python, OpenCV, MediaPipe, TensorFlow Lite</div>
+              <div><strong>AI Model:</strong> Gesture Classification Model</div>
+              <div><strong>Modes:</strong> Gesture & Writing</div>
+              <div><strong>Description:</strong> Real-time hand gesture and air writing recognition system.</div>
+              <div><strong>Developed By:</strong> Asima Ashraf</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button class="filter-button" id="resetSettings" type="button">Reset</button>
+          <button class="filter-button active" id="saveSettings" type="button">Save Settings</button>
+        </div>
+      </section>
+    </main>
+
+    <aside class="rightbar">
+      <section class="panel output">
+        <h2>Detected Output</h2>
+        <div class="output-orbit">
+          <svg width="92" height="92" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" stroke="#48f06a" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" stroke="#48f06a" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" stroke="#48f06a" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" stroke="#48f06a" stroke-width="2" fill="none" stroke-linecap="round" />
+          </svg>
+        </div>
+        <h3 id="detectedTitle">Open Hand</h3>
+        <p>Confidence: <span id="outputConfidence" style="color: var(--green)">0.0%</span></p>
+      </section>
+
+      <section class="panel">
+        <div class="activity-head">
+          <h2>Recent Activity</h2>
+          <button class="clear-button" id="clearActivity" type="button">Clear</button>
+        </div>
+        <div class="activity-list" id="activityList"></div>
+      </section>
+
+      <section class="panel help">
+        <h2>How to Use</h2>
+        <div class="gesture-help">
+          <div class="help-item green"><svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg><p><strong>Open Hand</strong>Show open palm to detect Open gesture.</p></div>
+          <div class="help-item blue"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V13" /><path d="M11 13v-1a1.5 1.5 0 0 1 3 0v1" /><path d="M14 13v-1a1.5 1.5 0 0 1 3 0v2.5a6 6 0 0 1-12 0V12a1.5 1.5 0 0 1 3 0v1" /></svg><p><strong>Pointer</strong>Raise index finger to detect Pointer gesture.</p></div>
+          <div class="help-item violet"><svg viewBox="0 0 24 24"><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12" /><path d="M10 12V4.5a1.5 1.5 0 0 1 3 0V12" /><path d="M13 13v-1a1.5 1.5 0 0 1 3 0v2.5a6 6 0 0 1-12 0V13a1.5 1.5 0 0 1 3 0" /></svg><p><strong>Victory / Peace</strong>Raise index & middle finger.</p></div>
+          <div class="help-item yellow"><svg viewBox="0 0 24 24"><path d="M7 11V7a1.5 1.5 0 0 1 3 0v4" /><path d="M10 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M13 11V7a1.5 1.5 0 0 1 3 0v4" /><path d="M16 12l3-3a1.5 1.5 0 0 1 2 2l-4 5a6 6 0 0 1-11-3v-2" /></svg><p><strong>Thumbs Up / Down</strong>Raise thumb for up or down.</p></div>
+          <div class="help-item red"><svg viewBox="0 0 24 24"><path d="M7 13V8a1.5 1.5 0 0 1 3 0v5" /><path d="M10 13V7a1.5 1.5 0 0 1 3 0v6" /><path d="M13 13V8a1.5 1.5 0 0 1 3 0v5" /><path d="M16 13V9a1.5 1.5 0 0 1 3 0v5a7 7 0 0 1-14 0v-1" /></svg><p><strong>Closed Fist</strong>Make a fist to detect Closed Fist.</p></div>
+        </div>
+        <div class="writing-help">
+          <div class="help-item blue"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg><p><strong>Select Color</strong>Move your index finger to the color buttons above.</p></div>
+          <div class="help-item green"><svg viewBox="0 0 24 24"><path d="M4 12h12" /><circle cx="5" cy="12" r="2" /><circle cx="18" cy="12" r="2" /></svg><p><strong>Draw</strong>Use your index finger to draw in the air.</p></div>
+          <div class="help-item violet"><svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg><p><strong>Clear Canvas</strong>Show open palm to clear the canvas.</p></div>
+          <div class="help-item white"><svg viewBox="0 0 24 24"><path d="m7 21-4-4L14 6a3 3 0 0 1 4 4L8 21Z" /><path d="M14 21H7" /></svg><p><strong>Eraser Mode</strong>Select eraser and move finger to erase the drawing.</p></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <input id="restoreInput" type="file" accept="application/json" hidden>
+  <script>
+    const cameraFeed = document.getElementById('cameraFeed');
+    const appShell = document.getElementById('appShell');
+    const cameraState = document.getElementById('cameraState');
+    const cameraToggle = document.getElementById('cameraToggle');
+    const cameraMessage = document.getElementById('cameraMessage');
+    const fullscreenCamera = document.getElementById('fullscreenCamera');
+    const fullscreenCameraText = document.getElementById('fullscreenCameraText');
+    const fpsBadge = document.getElementById('fpsBadge');
+    const trackingBadge = document.getElementById('trackingBadge');
+    const loggingBadge = document.getElementById('loggingBadge');
+    const loggingModeText = document.getElementById('loggingModeText');
+    const loggingLabelText = document.getElementById('loggingLabelText');
+    const gestureMode = document.getElementById('gestureMode');
+    const writingMode = document.getElementById('writingMode');
+    const detectedTitle = document.getElementById('detectedTitle');
+    const gestureMetric = document.getElementById('gestureMetric');
+    const handMetric = document.getElementById('handMetric');
+    const confidenceMetric = document.getElementById('confidenceMetric');
+    const confidenceBar = document.getElementById('confidenceBar');
+    const landmarkMetric = document.getElementById('landmarkMetric');
+    const motionMetric = document.getElementById('motionMetric');
+    const outputConfidence = document.getElementById('outputConfidence');
+    const sideCamera = document.getElementById('sideCamera');
+    const sideFps = document.getElementById('sideFps');
+    const sideHand = document.getElementById('sideHand');
+    const sideMotion = document.getElementById('sideMotion');
+    const sideCameraToggle = document.getElementById('sideCameraToggle');
+    const topCameraToggle = document.getElementById('topCameraToggle');
+    const topCamera = document.getElementById('topCamera');
+    const topFps = document.getElementById('topFps');
+    const writingText = document.getElementById('writingText');
+    const airCanvas = document.getElementById('airCanvas');
+    const activityList = document.getElementById('activityList');
+    const historyRecords = document.getElementById('historyRecords');
+    const historyDetail = document.getElementById('historyDetail');
+    const historySearch = document.getElementById('historySearch');
+    const historyTopGesture = document.getElementById('historyTopGesture');
+    const historyTopGestureMeta = document.getElementById('historyTopGestureMeta');
+    const historyLastActivity = document.getElementById('historyLastActivity');
+    const historyLastActivityMeta = document.getElementById('historyLastActivityMeta');
+    const statTotal = document.getElementById('statTotal');
+    const statGesture = document.getElementById('statGesture');
+    const statWriting = document.getElementById('statWriting');
+    const settingsCameraToggle = document.getElementById('settingsCameraToggle');
+    const settingsCamera = document.getElementById('settingsCamera');
+    const cameraVideo = document.getElementById('cameraVideo');
+    const dashboardPreview = document.getElementById('dashboardPreview');
+    const dashHeroCamera = document.getElementById('dashHeroCamera');
+    const dashHeroFps = document.getElementById('dashHeroFps');
+    const dashCameraSub = document.getElementById('dashCameraSub');
+    const dashFps = document.getElementById('dashFps');
+    const dashTotalGestures = document.getElementById('dashTotalGestures');
+    const dashWritingSessions = document.getElementById('dashWritingSessions');
+    const dashPreviewState = document.getElementById('dashPreviewState');
+    const dashConfidence = document.getElementById('dashConfidence');
+    const dashTracking = document.getElementById('dashTracking');
+    const dashMotion = document.getElementById('dashMotion');
+    const dashHand = document.getElementById('dashHand');
+    const dashboardActivity = document.getElementById('dashboardActivity');
+    const gestureDonut = document.getElementById('gestureDonut');
+    const gestureDonutTotal = document.getElementById('gestureDonutTotal');
+    const countOpen = document.getElementById('countOpen');
+    const countPointer = document.getElementById('countPointer');
+    const countVictory = document.getElementById('countVictory');
+    const countThumb = document.getElementById('countThumb');
+    const countFist = document.getElementById('countFist');
+    const countOther = document.getElementById('countOther');
+    const toast = document.getElementById('toast');
+    const restoreInput = document.getElementById('restoreInput');
+    const insightLandmarks = document.getElementById('insightLandmarks');
+    const insightConfidence = document.getElementById('insightConfidence');
+    const insightQuality = document.getElementById('insightQuality');
+    const insightQualityText = document.getElementById('insightQualityText');
+    const insightVisibility = document.getElementById('insightVisibility');
+    const sessionTime = document.getElementById('sessionTime');
+    const sessionGestures = document.getElementById('sessionGestures');
+    const sessionConfidence = document.getElementById('sessionConfidence');
+    const sessionBestGesture = document.getElementById('sessionBestGesture');
+
+    let toastTimer = null;
+    let currentMode = 'gesture';
+    let lastGesture = '';
+    let lastPoint = null;
+    let cameraIsOn = false;
+    let cameraToggleBusy = false;
+    let lastSnapshotAt = 0;
+    let historyRecordsData = [];
+    let selectedHistoryRecordId = '';
+    let activeHistoryFilter = 'all';
+    let appSettings = {};
+    let lastDashboardGesture = '';
+    let lastSavedHistoryGesture = '';
+    let lastSavedHistoryAt = 0;
+    let lastSavedWritingEvent = '';
+    let lastSavedWritingAt = 0;
+    let sessionStartedAt = Date.now();
+    let sessionGestureCount = 0;
+    let confidenceSamples = [];
+    let bestGesture = 'No hand';
+    let dashboardActivityData = [];
+    const dashboardGestureCounts = {
+      open: 0,
+      pointer: 0,
+      victory: 0,
+      thumb: 0,
+      fist: 0,
+      other: 0
+    };
+    const airContext = airCanvas.getContext('2d');
+    const HISTORY_LIMIT = 5000;
+    let lastWritingActivity = '';
+    let lastNoHandActivityAt = 0;
+    let lastCanvasSyncAt = 0;
+    let canvasSyncBusy = false;
+
+    const defaultSettings = {
+      defaultMode: 'gesture',
+      autoSwitch: false,
+      sensitivity: 'medium',
+      detectionAccuracy: 70,
+      modelMode: 'fast',
+      speedAccuracy: 6,
+      theme: 'dark',
+      fontSize: 100,
+      themeColor: 'blue',
+      autoSave: true,
+      gestureAlerts: true,
+      writingAlerts: true,
+      cameraPermission: true,
+      dataPermission: true,
+      offlineMode: true
+    };
+
+    function showToast(message) {
+      if (appSettings.gestureAlerts === false && message.includes('selected')) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function isCameraFullscreen() {
+      return document.fullscreenElement === cameraFeed || cameraFeed.classList.contains('fullscreen-fallback');
+    }
+
+    function syncFullscreenButton() {
+      const active = isCameraFullscreen();
+      fullscreenCameraText.textContent = active ? 'Exit Full Screen' : 'Full Screen';
+      fullscreenCamera.title = active ? 'Exit fullscreen camera' : 'Open camera fullscreen';
+    }
+
+    function updateLoggingBadge(state) {
+      const modeText = state.mode_text || 'LIVE';
+      const selectedLabel = Number.isInteger(state.selected_label) ? state.selected_label : -1;
+      loggingModeText.textContent = modeText;
+      loggingLabelText.textContent = selectedLabel >= 0 ? `LABEL ${selectedLabel}` : 'NO LABEL';
+      loggingBadge.classList.toggle('active', modeText !== 'LIVE');
+    }
+
+    function syncCameraToggleButtons(isOn) {
+      [cameraToggle, settingsCameraToggle, topCameraToggle].forEach((button) => {
+        if (!button) return;
+        button.classList.toggle('camera-off', !isOn);
+        button.title = isOn ? 'Turn camera off' : 'Turn camera on';
+        button.setAttribute('aria-pressed', String(isOn));
+      });
+      if (sideCameraToggle) {
+        sideCameraToggle.classList.toggle('camera-off', !isOn);
+        sideCameraToggle.title = isOn ? 'Turn camera off' : 'Turn camera on';
+        sideCameraToggle.setAttribute('aria-pressed', String(isOn));
+      }
+    }
+
+    async function toggleCameraFullscreen() {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else if (cameraFeed.requestFullscreen) {
+          await cameraFeed.requestFullscreen();
+        } else {
+          cameraFeed.classList.toggle('fullscreen-fallback');
+        }
+      } catch (error) {
+        cameraFeed.classList.toggle('fullscreen-fallback');
+      }
+      syncFullscreenButton();
+    }
+
+    async function sendBackendKey(key) {
+      try {
+        const response = await fetch(`/keyboard/${encodeURIComponent(key)}`, { cache: 'no-store' });
+        const state = await response.json();
+        updateLoggingBadge(state);
+        if (key === 'k') showToast('Keypoint logging mode on.');
+        if (key === 'h') showToast('History logging mode on.');
+        if (key === 'n') showToast('Live mode on.');
+        if (/^\d$/.test(key)) showToast(`Label ${key} selected.`);
+        if (key === 'a') showToast('Label 10 Saranghae selected.');
+        if (key === 'b') showToast('Label 11 You selected.');
+        cameraIsOn = !!state.camera_on;
+      } catch (error) {
+        showToast('Keyboard command failed.');
+      }
+    }
+
+    function getSettingElement(key) {
+      const ids = {
+        defaultMode: 'settingDefaultMode',
+        autoSwitch: 'settingAutoSwitch',
+        sensitivity: 'settingSensitivity',
+        detectionAccuracy: 'settingDetectionAccuracy',
+        modelMode: 'settingModelMode',
+        speedAccuracy: 'settingSpeedAccuracy',
+        theme: 'settingTheme',
+        fontSize: 'settingFontSize',
+        themeColor: 'settingThemeColor',
+        autoSave: 'settingAutoSave',
+        gestureAlerts: 'settingGestureAlerts',
+        writingAlerts: 'settingWritingAlerts',
+        cameraPermission: 'settingCameraPermission',
+        dataPermission: 'settingDataPermission',
+        offlineMode: 'settingOfflineMode'
+      };
+      return document.getElementById(ids[key]);
+    }
+
+    function readSettingsFromForm() {
+      Object.keys(defaultSettings).forEach((key) => {
+        const element = getSettingElement(key);
+        if (!element) return;
+        if (element.type === 'checkbox') {
+          appSettings[key] = element.checked;
+        } else if (element.type === 'range') {
+          appSettings[key] = Number(element.value);
+        } else {
+          appSettings[key] = element.value;
+        }
+      });
+    }
+
+    function applySettings() {
+      document.body.style.fontSize = `${appSettings.fontSize || 100}%`;
+      document.body.classList.toggle('light-mode', appSettings.theme === 'light');
+      const accentMap = {
+        blue: ['#4f8cff', '#7d4cff'],
+        green: ['#31d96b', '#16b8a6'],
+        orange: ['#ff9a3d', '#ff6b6b']
+      };
+      const colors = accentMap[appSettings.themeColor] || accentMap.blue;
+      document.documentElement.style.setProperty('--blue', colors[0]);
+      document.documentElement.style.setProperty('--violet', colors[1]);
+    }
+
+    function populateSettingsForm() {
+      Object.keys(defaultSettings).forEach((key) => {
+        const element = getSettingElement(key);
+        if (!element) return;
+        if (element.type === 'checkbox') {
+          element.checked = Boolean(appSettings[key]);
+        } else {
+          element.value = appSettings[key];
+        }
+      });
+    }
+
+    function loadSettings() {
+      try {
+        appSettings = { ...defaultSettings, ...JSON.parse(localStorage.getItem('visionAppSettings') || '{}') };
+      } catch (error) {
+        appSettings = { ...defaultSettings };
+      }
+      populateSettingsForm();
+      applySettings();
+    }
+
+    function saveSettings() {
+      readSettingsFromForm();
+      localStorage.setItem('visionAppSettings', JSON.stringify(appSettings));
+      applySettings();
+      showToast('Settings saved.');
+    }
+
+    function resetSettingsToDefault() {
+      appSettings = { ...defaultSettings };
+      populateSettingsForm();
+      saveSettings();
+      showToast('Settings reset.');
+    }
+
+    function resizeAirCanvas() {
+      const rect = airCanvas.getBoundingClientRect();
+      const prevCanvas = document.createElement('canvas');
+      prevCanvas.width = Math.max(1, airCanvas.width || 1);
+      prevCanvas.height = Math.max(1, airCanvas.height || 1);
+      const prevCtx = prevCanvas.getContext('2d');
+      prevCtx.drawImage(airCanvas, 0, 0);
+      airCanvas.width = Math.max(1, Math.floor(rect.width));
+      airCanvas.height = Math.max(1, Math.floor(rect.height));
+      airContext.clearRect(0, 0, airCanvas.width, airCanvas.height);
+      airContext.drawImage(prevCanvas, 0, 0, airCanvas.width, airCanvas.height);
+      airContext.lineCap = 'round';
+      airContext.lineJoin = 'round';
+      airContext.strokeStyle = '#48f06a';
+      airContext.lineWidth = 5;
+      airContext.shadowColor = 'rgba(72, 240, 106, 0.65)';
+      airContext.shadowBlur = 10;
+    }
+
+    async function syncBackendModule(mode) {
+      const module = mode === 'writing' ? 'writing' : 'gesture';
+      try {
+        await fetch(`/module/${module}`, { cache: 'no-store' });
+      } catch (error) {
+        showToast('Mode sync failed.');
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const isWriting = currentMode === 'writing';
+      appShell.classList.remove('dashboard-active', 'history-active', 'settings-active');
+      appShell.classList.toggle('gesture-active', !isWriting);
+      appShell.classList.toggle('writing-active', isWriting);
+      gestureMode.classList.toggle('active', !isWriting);
+      writingMode.classList.toggle('active', isWriting);
+      lastPoint = null;
+      syncBackendModule(currentMode);
+      if (isWriting) {
+        addWritingActivity('Writing Mode');
+        detectedTitle.textContent = 'Writing Mode';
+        gestureMetric.textContent = 'Air Writing';
+        motionMetric.textContent = 'Ready';
+      }
+      showToast(isWriting ? 'Writing mode selected.' : 'Gesture mode selected.');
+    }
+
+    function setView(view) {
+      appShell.classList.remove('dashboard-active', 'history-active', 'settings-active');
+      if (view === 'dashboard') {
+        currentMode = 'dashboard';
+        appShell.classList.add('dashboard-active');
+        appShell.classList.remove('gesture-active', 'writing-active');
+        gestureMode.classList.remove('active');
+        writingMode.classList.remove('active');
+        lastPoint = null;
+        showToast('Dashboard opened.');
+        return;
+      }
+      if (view === 'history') {
+        appShell.classList.add('history-active');
+        appShell.classList.remove('gesture-active', 'writing-active');
+        currentMode = 'history';
+        showToast('History opened.');
+        return;
+      }
+      if (view === 'settings') {
+        appShell.classList.add('settings-active');
+        appShell.classList.remove('gesture-active', 'writing-active');
+        currentMode = 'settings';
+        showToast('Settings opened.');
+        return;
+      }
+      if (view === 'writing') {
+        setMode('writing');
+        return;
+      }
+      setMode('gesture');
+    }
+
+    function activateNav(view) {
+      document.querySelectorAll('[data-nav]').forEach((item) => {
+        item.classList.toggle('active', item.dataset.view === view);
+      });
+    }
+
+    function formatGestureName(gesture) {
+      if (!gesture || gesture === 'No hand') return 'No hand';
+      const names = {
+        Open: 'Open Hand',
+        Close: 'Closed Hand',
+        Pointer: 'Pointer',
+        Thumb_Up: 'Thumbs Up',
+        Thumb_Down: 'Thumbs Down',
+        Victory_Peace: 'Victory / Peace',
+        OK: 'OK',
+        Rock_On: 'Rock On',
+        Call_Me: 'Call Me',
+        Pinch: 'Pinch'
+      };
+      return names[gesture] || gesture.replaceAll('_', ' ');
+    }
+
+    function loadHistory() {
+      try {
+        historyRecordsData = JSON.parse(localStorage.getItem('visionHistoryRecords') || '[]');
+      } catch (error) {
+        historyRecordsData = [];
+      }
+      historyRecordsData = historyRecordsData.slice(0, HISTORY_LIMIT);
+      renderHistory();
+    }
+
+    function saveHistory() {
+      localStorage.setItem('visionHistoryRecords', JSON.stringify(historyRecordsData.slice(0, HISTORY_LIMIT)));
+    }
+
+    function exportHistoryRecords(records, filename) {
+      const payload = JSON.stringify(records, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function downloadCanvasAsPng(canvas, filename) {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = filename;
+      link.click();
+    }
+
+    async function saveCanvasPngToOutput(canvas) {
+      try {
+        const response = await fetch('/writing/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: canvas.toDataURL('image/png') })
+        });
+        const result = await response.json();
+        return result.path || '';
+      } catch (error) {
+        return '';
+      }
+    }
+
+    async function exportSelectedHistoryPng() {
+      const record = historyRecordsData.find((item) => item.id === selectedHistoryRecordId);
+      if (!record) {
+        showToast('Select a history record first.');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 900;
+      canvas.height = 560;
+      const context = canvas.getContext('2d');
+
+      const drawSummary = () => {
+        const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#06111f');
+        gradient.addColorStop(1, '#101a2d');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.strokeStyle = '#7d4cff';
+        context.lineWidth = 4;
+        context.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+
+        context.fillStyle = '#f8fafc';
+        context.font = 'bold 44px Segoe UI, sans-serif';
+        context.fillText(record.label || 'History Record', 58, 98);
+        context.fillStyle = '#48f06a';
+        context.font = '24px Segoe UI, sans-serif';
+        context.fillText(record.mode || 'Vision AI', 60, 142);
+
+        context.fillStyle = '#aab4c3';
+        context.font = '22px Segoe UI, sans-serif';
+        context.fillText(`Time: ${new Date(record.timestamp).toLocaleString()}`, 60, 210);
+        context.fillText(`Confidence: ${Number(record.accuracy || 0).toFixed(1)}%`, 60, 250);
+        context.fillText(`Type: ${record.type || 'record'}`, 60, 290);
+
+        context.fillStyle = '#7d4cff';
+        context.font = 'bold 26px Segoe UI, sans-serif';
+        context.fillText('Hand Gesture & Air Writing System', 60, 500);
+      };
+
+      if (record.preview) {
+        const image = new Image();
+        image.onload = async () => {
+          drawSummary();
+          const maxWidth = 390;
+          const maxHeight = 300;
+          const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
+          const width = image.width * scale;
+          const height = image.height * scale;
+          const x = 470 + (maxWidth - width) / 2;
+          const y = 150 + (maxHeight - height) / 2;
+          context.fillStyle = '#ffffff';
+          context.fillRect(450, 130, 430, 340);
+          context.drawImage(image, x, y, width, height);
+          downloadCanvasAsPng(canvas, `history-${record.label || 'record'}.png`);
+          const savedPath = await saveCanvasPngToOutput(canvas);
+          showToast(savedPath ? `History PNG saved: ${savedPath}` : 'History PNG downloaded.');
+        };
+        image.onerror = async () => {
+          drawSummary();
+          downloadCanvasAsPng(canvas, `history-${record.label || 'record'}.png`);
+          const savedPath = await saveCanvasPngToOutput(canvas);
+          showToast(savedPath ? `History PNG saved: ${savedPath}` : 'History PNG downloaded.');
+        };
+        image.src = record.preview;
+        return;
+      }
+
+      drawSummary();
+      downloadCanvasAsPng(canvas, `history-${record.label || 'record'}.png`);
+      const savedPath = await saveCanvasPngToOutput(canvas);
+      showToast(savedPath ? `History PNG saved: ${savedPath}` : 'History PNG downloaded.');
+    }
+
+    function isSameDay(timestamp, date) {
+      const itemDate = new Date(timestamp);
+      return itemDate.toDateString() === date.toDateString();
+    }
+
+    function isThisWeek(timestamp) {
+      const itemDate = new Date(timestamp);
+      const now = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      return itemDate >= weekAgo && itemDate <= now;
+    }
+
+    function addHistoryRecord(record) {
+      if (!appSettings.autoSave || !appSettings.dataPermission) return;
+      const lastRecord = historyRecordsData[0];
+      if (
+        lastRecord &&
+        lastRecord.type === record.type &&
+        lastRecord.label === record.label &&
+        Date.now() - new Date(lastRecord.timestamp).getTime() < 1200
+      ) {
+        return;
+      }
+      const newRecord = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        timestamp: new Date().toISOString(),
+        accuracy: 0,
+        preview: '',
+        ...record
+      };
+      historyRecordsData.unshift(newRecord);
+      historyRecordsData = historyRecordsData.slice(0, HISTORY_LIMIT);
+      saveHistory();
+      renderHistory();
+    }
+
+    function getFilteredHistory() {
+      const query = historySearch.value.trim().toLowerCase();
+      return historyRecordsData.filter((record) => {
+        const matchesSearch = !query || `${record.label} ${record.mode}`.toLowerCase().includes(query);
+        const matchesFilter =
+          activeHistoryFilter === 'all' ||
+          (activeHistoryFilter === 'gesture' && record.type === 'gesture') ||
+          (activeHistoryFilter === 'writing' && record.type === 'writing') ||
+          (activeHistoryFilter === 'today' && isSameDay(record.timestamp, new Date())) ||
+          (activeHistoryFilter === 'week' && isThisWeek(record.timestamp));
+        return matchesSearch && matchesFilter;
+      });
+    }
+
+    function previewMarkup(record) {
+      if (record.preview) {
+        return `<img src="${record.preview}" alt="${record.label} preview">`;
+      }
+      return record.type === 'writing' ? '✍️' : '✋';
+    }
+
+    function renderHistory() {
+      const records = getFilteredHistory();
+      historyRecords.innerHTML = records.length
+        ? records.map((record) => `
+          <div class="history-record" data-id="${record.id}">
+            <div class="record-preview">${previewMarkup(record)}</div>
+            <div>
+              <div class="record-title">${record.label}</div>
+              <div class="record-meta">${record.mode} - ${new Date(record.timestamp).toLocaleString()}</div>
+            </div>
+            <button class="record-delete" data-delete="${record.id}" type="button">×</button>
+          </div>
+        `).join('')
+        : '<div class="record-meta">No history records found.</div>';
+
+      const gestureCount = historyRecordsData.filter((record) => record.type === 'gesture').length;
+      const writingCount = historyRecordsData.filter((record) => record.type === 'writing').length;
+      statTotal.textContent = historyRecordsData.length;
+      statGesture.textContent = gestureCount;
+      statWriting.textContent = writingCount;
+      dashTotalGestures.textContent = gestureCount;
+      dashWritingSessions.textContent = writingCount;
+      const gestureTotals = historyRecordsData
+        .filter((record) => record.type === 'gesture')
+        .reduce((totals, record) => {
+          totals[record.label] = (totals[record.label] || 0) + 1;
+          return totals;
+        }, {});
+      const topGesture = Object.entries(gestureTotals).sort((a, b) => b[1] - a[1])[0];
+      if (topGesture) {
+        const percent = gestureCount ? Math.round((topGesture[1] / gestureCount) * 100) : 0;
+        historyTopGesture.textContent = topGesture[0];
+        historyTopGestureMeta.textContent = `${topGesture[1]} records, ${percent}% of gesture history.`;
+      } else {
+        historyTopGesture.textContent = 'No records';
+        historyTopGestureMeta.textContent = 'Waiting for live detections.';
+      }
+      const lastRecord = historyRecordsData[0];
+      if (lastRecord) {
+        historyLastActivity.textContent = lastRecord.label;
+        historyLastActivityMeta.textContent = `${lastRecord.mode} - ${new Date(lastRecord.timestamp).toLocaleString()}`;
+      } else {
+        historyLastActivity.textContent = 'No activity yet';
+        historyLastActivityMeta.textContent = 'Real-time activity appears here.';
+      }
+      if (selectedHistoryRecordId) {
+        const stillExists = historyRecordsData.some((record) => record.id === selectedHistoryRecordId);
+        if (stillExists) {
+          showHistoryDetail(selectedHistoryRecordId);
+        }
+      }
+    }
+
+    function getDashboardGestureBucket(gesture) {
+      if (gesture === 'Open Hand' || gesture === 'Open') return 'open';
+      if (gesture === 'Pointer') return 'pointer';
+      if (gesture === 'Victory / Peace' || gesture === 'Victory_Peace') return 'victory';
+      if (gesture === 'Thumbs Up' || gesture === 'Thumbs Down' || gesture === 'Thumb_Up' || gesture === 'Thumb_Down') return 'thumb';
+      if (gesture === 'Closed Fist' || gesture === 'Closed Hand' || gesture === 'Close') return 'fist';
+      return 'other';
+    }
+
+    function formatCountLabel(value, total) {
+      const percent = total ? Math.round((value / total) * 100) : 0;
+      return `${value} (${percent}%)`;
+    }
+
+    function formatDuration(ms) {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
+      return `${minutes}:${seconds}`;
+    }
+
+    function updateGestureInsights(state, gestureName, confidence) {
+      if (!insightLandmarks) return;
+      const landmarks = Number(state.landmarks || 0);
+      const quality = state.hand_detected ? Math.max(55, Math.min(99, Math.round((confidence * 0.7) + (landmarks / 21) * 30))) : 0;
+      insightLandmarks.textContent = `${landmarks} / 21`;
+      insightConfidence.textContent = `${confidence.toFixed(1)}%`;
+      insightQuality.textContent = `${quality}%`;
+      insightQualityText.textContent = quality >= 80 ? 'Good' : quality >= 55 ? 'Stable' : 'Idle';
+      insightVisibility.textContent = state.hand_detected ? 'Good' : 'Idle';
+      sessionTime.textContent = formatDuration(Date.now() - sessionStartedAt);
+      sessionGestures.textContent = sessionGestureCount;
+      confidenceSamples.push(confidence);
+      confidenceSamples = confidenceSamples.slice(-30);
+      const avg = confidenceSamples.length
+        ? confidenceSamples.reduce((sum, value) => sum + value, 0) / confidenceSamples.length
+        : 0;
+      sessionConfidence.textContent = `${avg.toFixed(1)}%`;
+      if (gestureName && gestureName !== 'No hand') {
+        bestGesture = gestureName;
+      }
+      sessionBestGesture.textContent = bestGesture;
+    }
+
+    function renderGestureAnalytics() {
+      const total = Object.values(dashboardGestureCounts).reduce((sum, value) => sum + value, 0);
+      const safeTotal = total || 1;
+      const open = (dashboardGestureCounts.open / safeTotal) * 100;
+      const pointer = open + (dashboardGestureCounts.pointer / safeTotal) * 100;
+      const victory = pointer + (dashboardGestureCounts.victory / safeTotal) * 100;
+      const thumb = victory + (dashboardGestureCounts.thumb / safeTotal) * 100;
+      const fist = thumb + (dashboardGestureCounts.fist / safeTotal) * 100;
+      gestureDonut.style.background = `
+        radial-gradient(circle at center, rgba(5, 11, 20, 1) 0 42%, transparent 43%),
+        conic-gradient(#00d37b 0 ${open}%, #287dff ${open}% ${pointer}%, #7a43ff ${pointer}% ${victory}%, #ffc121 ${victory}% ${thumb}%, #ff6450 ${thumb}% ${fist}%, #c6ced8 ${fist}% 100%)
+      `;
+      gestureDonutTotal.textContent = total;
+      const storedGestureCount = historyRecordsData.filter((record) => record.type === 'gesture').length;
+      dashTotalGestures.textContent = storedGestureCount || total;
+      countOpen.textContent = formatCountLabel(dashboardGestureCounts.open, total);
+      countPointer.textContent = formatCountLabel(dashboardGestureCounts.pointer, total);
+      countVictory.textContent = formatCountLabel(dashboardGestureCounts.victory, total);
+      countThumb.textContent = formatCountLabel(dashboardGestureCounts.thumb, total);
+      countFist.textContent = formatCountLabel(dashboardGestureCounts.fist, total);
+      countOther.textContent = formatCountLabel(dashboardGestureCounts.other, total);
+    }
+
+    function addDashboardActivity(label, icon = 'G') {
+      dashboardActivityData.unshift({
+        icon,
+        label,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      });
+      dashboardActivityData = dashboardActivityData.slice(0, 5);
+      renderDashboardActivity();
+    }
+
+    function renderDashboardActivity() {
+      const rows = dashboardActivityData.length ? dashboardActivityData : [
+        { icon: 'G', label: 'Gesture module ready', time: 'Ready' },
+        { icon: 'C', label: 'Camera status waiting', time: 'Idle' },
+        { icon: 'M', label: 'AI model loaded', time: 'Ready' }
+      ];
+      dashboardActivity.innerHTML = rows.map((row) => `
+        <div class="dash-row"><i>${row.icon}</i><span>${row.label}</span><time>${row.time}</time></div>
+      `).join('');
+    }
+
+    function showHistoryDetail(recordId) {
+      const record = historyRecordsData.find((item) => item.id === recordId);
+      if (!record) return;
+      historyDetail.innerHTML = `
+        <div class="detail-preview">${previewMarkup(record)}</div>
+        <div class="detail-row"><span>Label</span><strong>${record.label}</strong></div>
+        <div class="detail-row"><span>Mode</span><strong>${record.mode}</strong></div>
+        <div class="detail-row"><span>Timestamp</span><strong>${new Date(record.timestamp).toLocaleString()}</strong></div>
+        <div class="detail-row"><span>Accuracy</span><strong>${Number(record.accuracy || 0).toFixed(1)}%</strong></div>
+        <button class="filter-button active" id="exportSelectedHistoryPng" type="button">Export Selected PNG</button>
+        <button class="back-button" type="button" onclick="document.getElementById('historyDetail').scrollIntoView()">Back to History</button>
+      `;
+      selectedHistoryRecordId = recordId;
+      document.getElementById('exportSelectedHistoryPng').addEventListener('click', exportSelectedHistoryPng);
+    }
+
+    function deleteHistoryRecord(recordId) {
+      historyRecordsData = historyRecordsData.filter((record) => record.id !== recordId);
+      saveHistory();
+      renderHistory();
+      if (selectedHistoryRecordId === recordId) {
+        selectedHistoryRecordId = '';
+        historyDetail.innerHTML = '<div class="detail-preview">Select</div><div class="detail-row"><span>Record</span><strong>No record selected</strong></div>';
+      }
+      showToast('History record deleted.');
+    }
+
+    function setWritingText(value) {
+      writingText.textContent = '';
+      writingText.classList.add('empty');
+    }
+
+    async function setBackendWritingTool(tool) {
+      try {
+        const response = await fetch(`/writing/tool/${encodeURIComponent(tool)}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Tool ${tool} failed`);
+        return await response.json();
+      } catch (error) {
+        showToast('Tool update failed.');
+        return null;
+      }
+    }
+
+    async function setInkColor(color, silent = false) {
+      document.querySelectorAll('[data-ink]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.ink === color);
+      });
+      document.querySelectorAll('[data-camera-tool]').forEach((button) => {
+        if (['blue', 'green', 'red'].includes(button.dataset.cameraTool)) {
+          button.classList.toggle('active', button.dataset.cameraTool === color);
+        }
+      });
+      document.querySelectorAll('[data-tool]').forEach((button) => {
+        if (button.dataset.tool !== 'eraser') {
+          button.classList.toggle('active', button.dataset.tool === 'pen');
+        }
+      });
+      const colorMap = {
+        blue: '#3268ff',
+        green: '#48f06a',
+        red: '#ff2d55',
+        yellow: '#ffd848'
+      };
+      airContext.strokeStyle = colorMap[color] || colorMap.green;
+      airContext.shadowColor = `${airContext.strokeStyle}aa`;
+      if (!silent) await setBackendWritingTool(color);
+      if (!silent) showToast(`Color: ${color.toUpperCase()}`);
+    }
+
+    async function setDrawingTool(tool, silent = false) {
+      document.querySelectorAll('[data-tool]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.tool === tool);
+      });
+      if (tool !== 'eraser') {
+        document.querySelector('[data-tool="pen"]')?.classList.add('active');
+      }
+      document.querySelectorAll('[data-camera-tool]').forEach((button) => {
+        if (button.dataset.cameraTool === 'eraser') {
+          button.classList.toggle('active', tool === 'eraser');
+        }
+        if (['blue', 'green', 'red'].includes(button.dataset.cameraTool) && tool === 'eraser') {
+          button.classList.remove('active');
+        }
+      });
+      if (!silent) await setBackendWritingTool(tool);
+    }
+
+    function syncCameraToolOverlay(state) {
+      const selectedTool = state.selected_tool || 'pen';
+      const selectedColor = state.selected_color || 'green';
+      document.querySelectorAll('[data-camera-tool]').forEach((button) => {
+        const key = button.dataset.cameraTool;
+        const isActiveColor = selectedTool !== 'eraser' && key === selectedColor;
+        const isActiveTool = selectedTool === 'eraser' && key === 'eraser';
+        const isClear = key === 'clear' && (state.motion === 'Clear' || state.status_message === 'Clear');
+        button.classList.toggle('active', isActiveColor || isActiveTool || isClear);
+      });
+    }
+
+    function clearCanvas() {
+      airContext.clearRect(0, 0, airCanvas.width, airCanvas.height);
+      lastPoint = null;
+    }
+
+    function drawAirPoint(point, motion, tool) {
+      if (currentMode !== 'writing' || !['Writing', 'Erasing'].includes(motion) || !point) {
+        lastPoint = null;
+        return;
+      }
+
+      const x = point.x * airCanvas.width;
+      const y = point.y * airCanvas.height;
+      if (lastPoint) {
+        const previousComposite = airContext.globalCompositeOperation;
+        airContext.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+        const dx = x - lastPoint.x;
+        const dy = y - lastPoint.y;
+        const distance = Math.hypot(dx, dy);
+        const steps = Math.max(1, Math.ceil(distance / 10));
+        airContext.beginPath();
+        airContext.moveTo(lastPoint.x, lastPoint.y);
+        for (let step = 1; step <= steps; step += 1) {
+          const t = step / steps;
+          airContext.lineTo(lastPoint.x + dx * t, lastPoint.y + dy * t);
+        }
+        airContext.stroke();
+        airContext.globalCompositeOperation = previousComposite;
+      }
+      lastPoint = { x, y };
+    }
+
+    function syncBackendWritingCanvas() {
+      if (canvasSyncBusy) return;
+      const now = Date.now();
+      if (now - lastCanvasSyncAt < 70) return;
+      lastCanvasSyncAt = now;
+      canvasSyncBusy = true;
+      const image = new Image();
+      image.onload = () => {
+        airContext.clearRect(0, 0, airCanvas.width, airCanvas.height);
+        airContext.drawImage(image, 0, 0, airCanvas.width, airCanvas.height);
+        canvasSyncBusy = false;
+      };
+      image.onerror = () => {
+        canvasSyncBusy = false;
+      };
+      image.src = `/writing/canvas.png?t=${now}`;
+    }
+
+    function addActivity(gesture) {
+      if (!gesture || gesture === 'No hand' || gesture === lastGesture) return;
+      lastGesture = gesture;
+      const item = document.createElement('div');
+      item.className = 'activity';
+      item.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10" /><path d="M13 10V6a1.5 1.5 0 0 1 3 0v5" /><path d="M16 11V8a1.5 1.5 0 0 1 3 0v5.5a7 7 0 0 1-14 0V10a1.5 1.5 0 0 1 3 0v2" /></svg>
+        <span>${gesture}</span>
+        <time>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time>
+      `;
+      activityList.prepend(item);
+      [...activityList.children].slice(6).forEach((child) => child.remove());
+    }
+
+    function addWritingActivity(label) {
+      if (!label || label === 'Blur') return;
+      if (label === 'No hand') {
+        const now = Date.now();
+        if (lastWritingActivity === 'No hand' || now - lastNoHandActivityAt < 5000) return;
+        lastNoHandActivityAt = now;
+      }
+      if (label === lastWritingActivity) return;
+      lastWritingActivity = label;
+      const item = document.createElement('div');
+      item.className = 'activity';
+      const icon = label.includes('Colour') ? 'C' : label.includes('Clear') ? 'X' : label.includes('Erased') ? 'E' : label.includes('No hand') ? 'N' : 'W';
+      item.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13 7 4 4" /></svg>
+        <span>${label}</span>
+        <time>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time>
+      `;
+      activityList.prepend(item);
+      [...activityList.children].slice(8).forEach((child) => child.remove());
+    }
+
+    function getWritingLabel(state) {
+      const message = state.status_message || state.motion || '';
+      if (!state.camera_on) return 'Camera off';
+      if (!state.hand_detected) return 'No hand';
+      if (message.includes('Colour')) return message;
+      if (message === 'Clear' || state.motion === 'Clear') return 'Clear';
+      if (message === 'Erased' || state.motion === 'Erased' || state.motion === 'Erasing') return 'Erased';
+      if ((state.motion || '').includes('Writing')) return 'Writing Mode';
+      if (message === 'Stop' || state.motion === 'Stop') return '';
+      return message || 'Writing Mode';
+    }
+
+    function recordWritingEvent(label, state) {
+      if (!label || label === 'Blur' || label === 'No hand' || label === 'Camera off') return;
+      const now = Date.now();
+      const fastWriting = label === 'Writing Mode' && now - lastSavedWritingAt < 5000;
+      const duplicate = label === lastSavedWritingEvent && now - lastSavedWritingAt < 1800;
+      if (fastWriting || duplicate) return;
+      lastSavedWritingEvent = label;
+      lastSavedWritingAt = now;
+      addDashboardActivity(`${label} in air writing`, 'W');
+      addHistoryRecord({
+        type: 'writing',
+        label,
+        mode: 'Writing',
+        accuracy: Number(state.confidence || 0),
+        preview: cameraVideo.src
+      });
+    }
+
+    async function updateState() {
+      try {
+        const response = await fetch('/state', { cache: 'no-store' });
+        const state = await response.json();
+        const confidence = Number(state.confidence || 0);
+        const backendMode = state.module === 'writing' ? 'writing' : 'gesture';
+        const isWritingFeed = backendMode === 'writing';
+        const isDashboardView = currentMode === 'dashboard';
+        const writingLabel = getWritingLabel(state);
+        const gestureName = isWritingFeed ? 'Writing Mode' : formatGestureName(state.gesture);
+        const writingMetric = isWritingFeed ? writingLabel : gestureName;
+        const handName = state.hand_detected ? `${state.handedness || 'Unknown'} hand` : 'No hand';
+        updateLoggingBadge(state);
+        cameraIsOn = !!state.camera_on;
+        cameraFeed.classList.toggle('camera-live', !!state.camera_on);
+        syncCameraToggleButtons(cameraIsOn);
+        cameraState.textContent = cameraIsOn ? 'ON' : 'OFF';
+        cameraMessage.textContent = cameraIsOn ? '' : 'Camera is OFF. Click Camera: OFF to start it.';
+        fpsBadge.textContent = `FPS: ${Number(state.fps || 0).toFixed(1)}`;
+        trackingBadge.textContent = state.hand_detected ? 'Tracking: ON' : 'Tracking: SEARCHING';
+        detectedTitle.textContent = gestureName;
+        gestureMetric.textContent = writingMetric;
+        handMetric.textContent = handName;
+        confidenceMetric.textContent = `${confidence.toFixed(1)}%`;
+        outputConfidence.textContent = `${confidence.toFixed(1)}%`;
+        confidenceBar.style.width = `${Math.max(0, Math.min(100, confidence))}%`;
+        landmarkMetric.textContent = `${state.landmarks || 0} / 21`;
+        motionMetric.textContent = state.motion || 'Stop';
+        sideCamera.textContent = cameraIsOn ? 'ON' : 'OFF';
+        sideFps.textContent = Number(state.fps || 0).toFixed(1);
+        sideHand.textContent = handName;
+        sideMotion.textContent = state.motion || 'Stop';
+        topCamera.textContent = cameraIsOn ? 'ON' : 'OFF';
+        topFps.textContent = Number(state.fps || 0).toFixed(1);
+        settingsCamera.textContent = cameraIsOn ? 'ON' : 'OFF';
+        dashHeroCamera.textContent = cameraIsOn ? 'ON' : 'OFF';
+        dashHeroFps.textContent = Number(state.fps || 0).toFixed(1);
+        dashCameraSub.textContent = cameraIsOn ? 'Live and Ready' : 'Offline';
+        dashFps.textContent = Number(state.fps || 0).toFixed(1);
+        dashPreviewState.textContent = cameraIsOn ? 'LIVE' : 'PREVIEW';
+        dashConfidence.textContent = `${confidence.toFixed(1)}%`;
+        dashTracking.textContent = state.hand_detected ? 'Active' : 'Idle';
+        dashMotion.textContent = isWritingFeed ? (writingLabel || state.motion || 'Writing') : (state.motion || 'Stop');
+        dashHand.textContent = state.hand_detected ? (state.handedness || 'Detected') : 'No';
+        if (!isWritingFeed && state.hand_detected && gestureName && gestureName !== 'No hand' && gestureName !== lastDashboardGesture) {
+          lastDashboardGesture = gestureName;
+          sessionGestureCount += 1;
+          dashboardGestureCounts[getDashboardGestureBucket(gestureName)] += 1;
+          addDashboardActivity(`${gestureName} detected`, 'G');
+          renderGestureAnalytics();
+        }
+        if (!state.hand_detected) {
+          lastDashboardGesture = '';
+          lastSavedHistoryGesture = '';
+          lastSavedHistoryAt = 0;
+          if (!isWritingFeed) {
+            lastSavedWritingEvent = '';
+          }
+        }
+        const shouldSaveGesture = (
+          !isWritingFeed &&
+          state.hand_detected &&
+          gestureName &&
+          gestureName !== 'No hand' &&
+          (gestureName !== lastSavedHistoryGesture || Date.now() - lastSavedHistoryAt > 1800)
+        );
+        if (shouldSaveGesture) {
+          lastSavedHistoryGesture = gestureName;
+          lastSavedHistoryAt = Date.now();
+          addHistoryRecord({
+            type: 'gesture',
+            label: gestureName,
+            mode: 'Gesture',
+            accuracy: confidence,
+            preview: cameraVideo.src
+          });
+        }
+        if (currentMode === 'gesture') {
+          addActivity(gestureName);
+          updateGestureInsights(state, gestureName, confidence);
+        }
+        if (isWritingFeed && (currentMode === 'writing' || isDashboardView)) {
+          if (state.selected_color) {
+            setInkColor(state.selected_color, true);
+          }
+          if (state.selected_tool) {
+            setDrawingTool(state.selected_tool, true);
+          }
+          syncCameraToolOverlay(state);
+          if (currentMode === 'writing') {
+            drawAirPoint(state.index_point, state.motion, state.selected_tool || 'pen');
+            syncBackendWritingCanvas();
+          }
+          if (state.motion === 'Clear' || state.status_message === 'Clear') {
+            clearCanvas();
+            if (currentMode === 'writing') {
+              syncBackendWritingCanvas();
+            }
+          }
+          if (currentMode === 'writing') {
+            addWritingActivity(writingLabel);
+          }
+          recordWritingEvent(writingLabel, state);
+        }
+        if (appSettings.autoSwitch && state.gesture === 'Pointer' && currentMode === 'gesture') {
+          setMode('writing');
+        }
+
+        const now = Date.now();
+        if (now - lastSnapshotAt > 80) {
+          cameraVideo.src = `/snapshot.jpg?t=${now}`;
+          dashboardPreview.src = `/snapshot.jpg?t=${now}`;
+          lastSnapshotAt = now;
+        }
+      } catch (error) {
+        cameraState.textContent = 'SERVER OFF';
+        trackingBadge.textContent = 'Tracking: OFF';
+      }
+    }
+
+    async function toggleCamera() {
+      if (cameraToggleBusy) return;
+      cameraToggleBusy = true;
+      let latestCameraOn = cameraIsOn;
+      try {
+        const stateResponse = await fetch(`/state?t=${Date.now()}`, { cache: 'no-store' });
+        if (stateResponse.ok) {
+          const latestState = await stateResponse.json();
+          latestCameraOn = !!latestState.camera_on;
+        }
+      } catch (error) {
+        latestCameraOn = cameraIsOn;
+      }
+      const nextAction = latestCameraOn ? 'off' : 'on';
+      cameraState.textContent = nextAction === 'on' ? 'STARTING' : 'STOPPING';
+      topCamera.textContent = nextAction === 'on' ? 'STARTING' : 'STOPPING';
+      sideCamera.textContent = nextAction === 'on' ? 'STARTING' : 'STOPPING';
+      settingsCamera.textContent = nextAction === 'on' ? 'STARTING' : 'STOPPING';
+      syncCameraToggleButtons(nextAction === 'on');
+      try {
+        const response = await fetch(`/camera/${nextAction}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Camera ${nextAction} failed`);
+        }
+        if (nextAction === 'on') {
+          cameraVideo.src = `/snapshot.jpg?t=${Date.now()}`;
+          cameraIsOn = true;
+          syncCameraToggleButtons(true);
+          addDashboardActivity('Camera stream online', 'C');
+          showToast('Camera turned on.');
+        } else {
+          cameraVideo.src = `/snapshot.jpg?t=${Date.now()}`;
+          cameraIsOn = false;
+          syncCameraToggleButtons(false);
+          addDashboardActivity('Camera turned off', 'C');
+          showToast('Camera turned off.');
+        }
+        setTimeout(updateState, nextAction === 'on' ? 800 : 250);
+      } catch (error) {
+        showToast('Camera toggle failed.');
+        setTimeout(updateState, 250);
+      } finally {
+        setTimeout(() => {
+          cameraToggleBusy = false;
+        }, 350);
+      }
+    }
+
+    async function downloadWritingImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 900;
+      canvas.height = 560;
+      const context = canvas.getContext('2d');
+
+      const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#06111f');
+      gradient.addColorStop(1, '#101a2d');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = '#7d4cff';
+      context.lineWidth = 4;
+      context.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+
+      context.fillStyle = '#f8fafc';
+      context.font = 'bold 44px Segoe UI, sans-serif';
+      context.fillText('Air Writing Canvas', 58, 98);
+      context.fillStyle = '#48f06a';
+      context.font = '24px Segoe UI, sans-serif';
+      context.fillText('Writing Mode', 60, 142);
+
+      context.fillStyle = '#aab4c3';
+      context.font = '22px Segoe UI, sans-serif';
+      context.fillText(`Time: ${new Date().toLocaleString()}`, 60, 210);
+      context.fillText(`Confidence: ${outputConfidence.textContent || '0.0%'}`, 60, 250);
+      context.fillText('Type: writing', 60, 290);
+
+      context.fillStyle = '#7d4cff';
+      context.font = 'bold 26px Segoe UI, sans-serif';
+      context.fillText('Hand Gesture & Air Writing System', 60, 500);
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(450, 130, 430, 340);
+      context.strokeStyle = 'rgba(15, 23, 42, 0.12)';
+      context.lineWidth = 1;
+      for (let x = 470; x < 860; x += 20) {
+        context.beginPath();
+        context.moveTo(x, 150);
+        context.lineTo(x, 450);
+        context.stroke();
+      }
+      for (let y = 150; y < 450; y += 20) {
+        context.beginPath();
+        context.moveTo(470, y);
+        context.lineTo(860, y);
+        context.stroke();
+      }
+      context.drawImage(airCanvas, 470, 150, 390, 300);
+
+      downloadCanvasAsPng(canvas, 'air-writing-summary.png');
+      const savedPath = await saveCanvasPngToOutput(canvas);
+      showToast(savedPath ? `Air writing PNG saved: ${savedPath}` : 'Air writing PNG downloaded.');
+    }
+
+    document.querySelectorAll('[data-nav]').forEach((button) => {
+      button.addEventListener('click', () => {
+        activateNav(button.dataset.view);
+        setView(button.dataset.view);
+      });
+    });
+
+    document.querySelectorAll('[data-dashboard-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const view = button.dataset.dashboardView;
+        activateNav(view);
+        setView(view);
+      });
+    });
+
+    document.querySelectorAll('[data-tool]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        document.querySelectorAll('[data-tool]').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        if (button.dataset.tool === 'delete') {
+          clearCanvas();
+          showToast('Canvas cleared.');
+        } else {
+          await setDrawingTool(button.dataset.tool);
+          showToast(`${button.getAttribute('aria-label')} selected.`);
+        }
+      });
+    });
+
+    document.querySelectorAll('[data-ink]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        await setInkColor(button.dataset.ink);
+      });
+    });
+
+    document.querySelectorAll('[data-camera-tool]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const tool = button.dataset.cameraTool;
+        if (['blue', 'green', 'red'].includes(tool)) {
+          await setInkColor(tool);
+          return;
+        }
+        if (tool === 'eraser') {
+          await setDrawingTool('eraser');
+          showToast('Eraser selected.');
+          return;
+        }
+        if (tool === 'clear') {
+          await clearWritingEverywhere();
+          addWritingActivity('Clear');
+          showToast('Canvas cleared.');
+        }
+      });
+    });
+
+    function bindClick(element, handler) {
+      if (element) {
+        element.addEventListener('click', handler);
+      }
+    }
+
+    bindClick(cameraToggle, toggleCamera);
+    bindClick(topCameraToggle, toggleCamera);
+    bindClick(sideCameraToggle, toggleCamera);
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('#cameraToggle, #topCameraToggle, #sideCameraToggle, #settingsCameraToggle')) {
+        event.preventDefault();
+        toggleCamera();
+      }
+    });
+    if (sideCameraToggle) {
+      sideCameraToggle.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleCamera();
+        }
+      });
+    }
+    bindClick(fullscreenCamera, toggleCameraFullscreen);
+    document.addEventListener('fullscreenchange', syncFullscreenButton);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && cameraFeed.classList.contains('fullscreen-fallback')) {
+        cameraFeed.classList.remove('fullscreen-fallback');
+        syncFullscreenButton();
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (/^[0-9knhab]$/.test(key) && !['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) {
+        sendBackendKey(key);
+      }
+    });
+    bindClick(settingsCameraToggle, toggleCamera);
+    bindClick(gestureMode, () => setMode('gesture'));
+    bindClick(writingMode, () => setMode('writing'));
+    async function clearWritingEverywhere() {
+      clearCanvas();
+      try {
+        await fetch('/writing/clear', { cache: 'no-store' });
+      } catch (error) {
+        showToast('Backend clear failed.');
+      }
+    }
+
+    document.getElementById('clearCanvas').addEventListener('click', async () => {
+      await clearWritingEverywhere();
+      addWritingActivity('Clear');
+      showToast('Canvas cleared.');
+    });
+    document.getElementById('clearCanvasTop').addEventListener('click', async () => {
+      await clearWritingEverywhere();
+      addWritingActivity('Clear');
+      showToast('Canvas cleared.');
+    });
+    document.getElementById('saveCanvas').addEventListener('click', async () => {
+      const image = airCanvas.toDataURL('image/png');
+      localStorage.setItem('airWritingImage', image);
+      let savedPath = '';
+      try {
+        const response = await fetch('/writing/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image })
+        });
+        const result = await response.json();
+        savedPath = result.path || '';
+      } catch (error) {
+        savedPath = '';
+      }
+      addHistoryRecord({
+        type: 'writing',
+        label: 'Air writing',
+        mode: 'Writing',
+        accuracy: 0,
+        preview: image
+      });
+      if (appSettings.writingAlerts) {
+        showToast(savedPath ? `Canvas saved: ${savedPath}` : 'Canvas saved in browser.');
+      }
+    });
+    document.getElementById('exportCanvas').addEventListener('click', async () => {
+      await downloadWritingImage();
+    });
+    document.getElementById('clearActivity').addEventListener('click', () => {
+      activityList.innerHTML = '';
+      lastGesture = '';
+      lastWritingActivity = '';
+      showToast('Activity cleared.');
+    });
+
+    historySearch.addEventListener('input', renderHistory);
+    document.querySelectorAll('[data-filter]').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter]').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        activeHistoryFilter = button.dataset.filter;
+        renderHistory();
+      });
+    });
+    historyRecords.addEventListener('click', (event) => {
+      const deleteButton = event.target.closest('[data-delete]');
+      if (deleteButton) {
+        deleteHistoryRecord(deleteButton.dataset.delete);
+        return;
+      }
+      const record = event.target.closest('.history-record');
+      if (record) {
+        showHistoryDetail(record.dataset.id);
+      }
+    });
+    document.getElementById('clearAllHistory').addEventListener('click', () => {
+      if (!confirm('Clear all history records?')) return;
+      historyRecordsData = [];
+      selectedHistoryRecordId = '';
+      saveHistory();
+      renderHistory();
+      historyDetail.innerHTML = '<div class="detail-preview">Select</div><div class="detail-row"><span>Record</span><strong>No record selected</strong></div>';
+      showToast('All history cleared.');
+    });
+    document.getElementById('exportAllHistory').addEventListener('click', () => {
+      exportHistoryRecords(historyRecordsData, 'vision-history-all.json');
+      showToast('All history exported.');
+    });
+    document.getElementById('exportFilteredHistory').addEventListener('click', () => {
+      exportHistoryRecords(getFilteredHistory(), 'vision-history-filtered.json');
+      showToast('Filtered history exported.');
+    });
+    document.getElementById('settingsClearHistory').addEventListener('click', () => {
+      if (!confirm('Clear all history records?')) return;
+      historyRecordsData = [];
+      selectedHistoryRecordId = '';
+      saveHistory();
+      renderHistory();
+      showToast('History cleared.');
+    });
+    document.getElementById('settingsBackup').addEventListener('click', () => {
+      const payload = JSON.stringify({ settings: appSettings, history: historyRecordsData }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'vision-system-backup.json';
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast('Backup downloaded.');
+    });
+    document.getElementById('settingsRestore').addEventListener('click', () => {
+      restoreInput.click();
+    });
+    restoreInput.addEventListener('change', async () => {
+      const file = restoreInput.files && restoreInput.files[0];
+      if (!file) return;
+      try {
+        const payload = JSON.parse(await file.text());
+        if (payload.settings && typeof payload.settings === 'object') {
+          appSettings = { ...defaultSettings, ...payload.settings };
+          localStorage.setItem('visionAppSettings', JSON.stringify(appSettings));
+          populateSettingsForm();
+          applySettings();
+        }
+        if (Array.isArray(payload.history)) {
+          historyRecordsData = payload.history.slice(0, HISTORY_LIMIT);
+          selectedHistoryRecordId = '';
+          saveHistory();
+          renderHistory();
+        }
+        historyDetail.innerHTML = '<div class="detail-preview">Select</div><div class="detail-row"><span>Record</span><strong>No record selected</strong></div>';
+        showToast('Backup restored.');
+      } catch (error) {
+        showToast('Restore failed. Use a valid backup file.');
+      } finally {
+        restoreInput.value = '';
+      }
+    });
+    document.getElementById('saveSettings').addEventListener('click', saveSettings);
+    document.getElementById('resetSettings').addEventListener('click', resetSettingsToDefault);
+    document.querySelectorAll('.settings-view input, .settings-view select').forEach((element) => {
+      element.addEventListener('change', () => {
+        readSettingsFromForm();
+        applySettings();
+      });
+    });
+
+    window.addEventListener('resize', resizeAirCanvas);
+    resizeAirCanvas();
+    loadSettings();
+    loadHistory();
+    renderGestureAnalytics();
+    renderDashboardActivity();
+    activateNav('dashboard');
+    setView('dashboard');
+    setInterval(updateState, 60);
+    updateState();
+    cameraVideo.src = `/snapshot.jpg?t=${Date.now()}`;
+  </script>
+</body>
+</html>
