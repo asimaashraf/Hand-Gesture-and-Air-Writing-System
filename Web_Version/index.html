@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hand Gesture & Air Writing System</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script defer src="camera.js"></script>
+  <script defer src="gesture.js"></script>
+  <script defer src="airwriting.js"></script>
+  <script defer src="ocr.js"></script>
+  <script defer src="web_app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>Hand Gesture & Air Writing System</h1>
+        <p>Browser camera, hand tracking, gesture recognition, writing canvas, and OCR.</p>
+      </div>
+      <div class="status-strip" aria-live="polite">
+        <span id="cameraStatus" class="status-pill">Camera idle</span>
+        <span id="modelStatus" class="status-pill">Models loading</span>
+        <span id="fpsStatus" class="status-pill">FPS 0</span>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="Hand gesture and air writing workspace">
+      <div class="stage">
+        <video id="cameraVideo" class="camera-video" playsinline muted></video>
+        <canvas id="videoCanvas" class="stage-layer"></canvas>
+        <canvas id="writingCanvas" class="stage-layer"></canvas>
+        <div class="gesture-readout">
+          <span id="gestureLabel">No hand</span>
+          <strong id="motionLabel">Stop</strong>
+        </div>
+      </div>
+
+      <aside class="control-panel">
+        <div class="panel-section">
+          <h2>Mode</h2>
+          <div class="segmented" role="group" aria-label="Application mode">
+            <button id="gestureModeBtn" class="active" type="button">Gesture</button>
+            <button id="writingModeBtn" type="button">Writing</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>Camera</h2>
+          <div class="button-row">
+            <button id="startCameraBtn" type="button"><i data-lucide="video"></i><span>Start</span></button>
+            <button id="stopCameraBtn" type="button"><i data-lucide="video-off"></i><span>Stop</span></button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>Tools</h2>
+          <div class="swatches" aria-label="Ink colors">
+            <button class="swatch active" type="button" data-tool="green" aria-label="Green ink"></button>
+            <button class="swatch" type="button" data-tool="blue" aria-label="Blue ink"></button>
+            <button class="swatch" type="button" data-tool="red" aria-label="Red ink"></button>
+            <button class="swatch" type="button" data-tool="yellow" aria-label="Yellow ink"></button>
+            <button class="swatch" type="button" data-tool="purple" aria-label="Purple ink"></button>
+            <button class="swatch" type="button" data-tool="white" aria-label="White ink"></button>
+          </div>
+          <label class="slider-label" for="brushSize">Brush <span id="brushSizeLabel">7</span></label>
+          <input id="brushSize" type="range" min="2" max="30" value="7">
+          <div class="button-row">
+            <button id="eraserBtn" type="button"><i data-lucide="eraser"></i><span>Eraser</span></button>
+            <button id="clearBtn" type="button"><i data-lucide="trash-2"></i><span>Clear</span></button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>Output</h2>
+          <div class="button-row">
+            <button id="downloadBtn" type="button"><i data-lucide="download"></i><span>PNG</span></button>
+            <button id="ocrBtn" type="button"><i data-lucide="scan-text"></i><span>OCR</span></button>
+          </div>
+          <textarea id="ocrOutput" readonly placeholder="OCR output appears here"></textarea>
+        </div>
+
+        <div class="panel-section compact">
+          <dl>
+            <div><dt>Hand</dt><dd id="handLabel">None</dd></div>
+            <div><dt>Tool</dt><dd id="toolLabel">Green pen</dd></div>
+            <div><dt>Input</dt><dd id="inputLabel">Model</dd></div>
+          </dl>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>
