@@ -7,7 +7,7 @@ This folder is a standalone browser implementation of the hand gesture and air w
 - `index.html` - GitHub Pages entry point.
 - `style.css` - responsive desktop/mobile UI.
 - `camera.js` - browser camera via `navigator.mediaDevices.getUserMedia()`.
-- `gesture.js` - MediaPipe landmark preprocessing and browser gesture classification.
+- `gesture.js` - MediaPipe landmark preprocessing plus copied TFLite classifier support.
 - `airwriting.js` - drawing canvas, colors, eraser, clear, and PNG export.
 - `ocr.js` - browser OCR through Tesseract.js.
 - `models/` - copied model and label files from the desktop project.
@@ -49,4 +49,4 @@ For a cleaner URL, you can publish only the `Web_Version` contents from a separa
 
 ## Notes
 
-The original desktop files and original `model/` folder are not modified. The `.tflite` and label files inside `Web_Version/models/` are copied assets kept separate from the desktop model files.
+The original desktop files and original `model/` folder are not modified. The `.tflite` and label files inside `Web_Version/models/` are copied runtime assets for the browser build.

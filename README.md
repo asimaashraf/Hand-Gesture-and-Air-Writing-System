@@ -99,7 +99,8 @@ The web version is fully contained in `Web_Version/`.
 
 - Browser camera via `navigator.mediaDevices.getUserMedia()`
 - Real-time hand detection with MediaPipe Hands
-- Real-time gesture recognition from MediaPipe hand landmarks
+- Real-time gesture recognition using copied `.tflite` model assets when supported
+- Heuristic fallback if browser TFLite loading is unavailable
 - Real-time air writing
 - Drawing canvas
 - Color selection
@@ -124,7 +125,7 @@ Web_Version/
 └── assets/
 ```
 
-The web model files are copied into `Web_Version/models/` and kept separate. The original desktop `model/` folder is not changed by the web version.
+The web model files are copied into `Web_Version/models/`. The original desktop `model/` folder is not changed by the web version.
 
 ### Local Web Test
 

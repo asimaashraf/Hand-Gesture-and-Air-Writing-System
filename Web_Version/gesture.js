@@ -31,6 +31,8 @@ class GestureRecognizer {
   constructor() {
     this.keypointLabels = [];
     this.pointLabels = [];
+    this.keypointModel = null;
+    this.pointModel = null;
     this.modelStatus = "Loading";
     this.usingModel = false;
     this.pointHistory = new RingBuffer(16);
@@ -44,7 +46,19 @@ class GestureRecognizer {
     ]);
     this.keypointLabels = keyLabels;
     this.pointLabels = pointLabels;
-    this.modelStatus = "Landmark recognizer ready";
+
+    try {
+      if (!window.tflite || !window.tf) throw new Error("TensorFlow Lite Web is unavailable.");
+      await tf.ready();
+      this.keypointModel = await tflite.loadTFLiteModel("models/keypoint_classifier.tflite");
+      this.pointModel = await tflite.loadTFLiteModel("models/point_history_classifier.tflite");
+      this.usingModel = true;
+      this.modelStatus = "TFLite models ready";
+    } catch (error) {
+      this.usingModel = false;
+      this.modelStatus = "Heuristic fallback";
+      console.warn("TFLite model loading failed. Using hand-pose fallback.", error);
+    }
   }
 
   async loadLabels(path) {
@@ -72,6 +86,11 @@ class GestureRecognizer {
     const processed = this.preProcessLandmark(landmarkList);
     let handSignId = this.classifyKeypointFallback(landmarkList, handednessLabel);
 
+    if (this.usingModel) {
+      const modelId = this.predictClass(this.keypointModel, processed, [1, 42]);
+      if (Number.isInteger(modelId)) handSignId = modelId;
+    }
+
     const modelGesture = this.keypointLabels[handSignId] || "Unknown";
     const gesture = this.refineGesture(modelGesture, landmarkList, handednessLabel);
     const indexPoint = landmarkList[8];
@@ -84,7 +103,12 @@ class GestureRecognizer {
 
     const processedHistory = this.preProcessPointHistory(width, height);
     let motionId = 0;
-    if (processedHistory.length === 32) motionId = this.classifyPointHistoryFallback();
+    if (this.usingModel && processedHistory.length === 32) {
+      const modelMotionId = this.predictClass(this.pointModel, processedHistory, [1, 32], 0.5);
+      if (Number.isInteger(modelMotionId)) motionId = modelMotionId;
+    } else {
+      motionId = this.classifyPointHistoryFallback();
+    }
 
     this.fingerHistory.push(motionId);
     const motion = this.pointLabels[this.mode(this.fingerHistory.items)] || "Stop";
@@ -96,8 +120,21 @@ class GestureRecognizer {
       bbox: this.calcBoundingRect(landmarkList),
       indexPoint: { x: indexPoint[0], y: indexPoint[1] },
       handedness: handednessLabel || "Unknown",
-      input: "Landmarks"
+      input: this.usingModel ? "Model" : "Fallback"
     };
+  }
+
+  predictClass(model, values, shape, threshold = 0) {
+    const input = tf.tensor(values, shape, "float32");
+    const output = model.predict(input);
+    const data = output.dataSync();
+    input.dispose();
+    output.dispose();
+    let maxIndex = 0;
+    for (let i = 1; i < data.length; i += 1) {
+      if (data[i] > data[maxIndex]) maxIndex = i;
+    }
+    return data[maxIndex] >= threshold ? maxIndex : 0;
   }
 
   calcLandmarkList(landmarks, width, height) {
